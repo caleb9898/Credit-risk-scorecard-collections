@@ -21,7 +21,8 @@ check: lint test
 notebooks:
 	@for nb in $$(ls notebooks/*.ipynb 2>/dev/null); do \
 	  echo "Executing $$nb"; \
-	  jupyter nbconvert --to notebook --execute --inplace $$nb || exit 1; \
+	  jupyter nbconvert --to notebook --execute --inplace \
+	    --ExecutePreprocessor.record_timing=False $$nb || exit 1; \
 	done
 
 # Validate the raw data file against the expected schema and print its SHA-256.

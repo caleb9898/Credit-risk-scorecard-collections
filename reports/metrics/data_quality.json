@@ -1,0 +1,740 @@
+{
+  "metrics": {
+    "balance_anomalies": [
+      {
+        "min_bill": -165580.0,
+        "month": 1,
+        "n_bill_over_limit": 2115,
+        "n_negative_bill": 590,
+        "n_negative_payment": 0
+      },
+      {
+        "min_bill": -69777.0,
+        "month": 2,
+        "n_bill_over_limit": 1940,
+        "n_negative_bill": 669,
+        "n_negative_payment": 0
+      },
+      {
+        "min_bill": -157264.0,
+        "month": 3,
+        "n_bill_over_limit": 1583,
+        "n_negative_bill": 655,
+        "n_negative_payment": 0
+      },
+      {
+        "min_bill": -170000.0,
+        "month": 4,
+        "n_bill_over_limit": 1018,
+        "n_negative_bill": 675,
+        "n_negative_payment": 0
+      },
+      {
+        "min_bill": -81334.0,
+        "month": 5,
+        "n_bill_over_limit": 820,
+        "n_negative_bill": 655,
+        "n_negative_payment": 0
+      },
+      {
+        "min_bill": -339603.0,
+        "month": 6,
+        "n_bill_over_limit": 798,
+        "n_negative_bill": 688,
+        "n_negative_payment": 0
+      }
+    ],
+    "code_counts": {
+      "EDUCATION": [
+        {
+          "count": 14,
+          "documented": false,
+          "share": 0.00046666666666666666,
+          "value": 0
+        },
+        {
+          "count": 10585,
+          "documented": true,
+          "share": 0.35283333333333333,
+          "value": 1
+        },
+        {
+          "count": 14030,
+          "documented": true,
+          "share": 0.4676666666666667,
+          "value": 2
+        },
+        {
+          "count": 4917,
+          "documented": true,
+          "share": 0.1639,
+          "value": 3
+        },
+        {
+          "count": 123,
+          "documented": true,
+          "share": 0.0041,
+          "value": 4
+        },
+        {
+          "count": 280,
+          "documented": false,
+          "share": 0.009333333333333334,
+          "value": 5
+        },
+        {
+          "count": 51,
+          "documented": false,
+          "share": 0.0017,
+          "value": 6
+        }
+      ],
+      "MARRIAGE": [
+        {
+          "count": 54,
+          "documented": false,
+          "share": 0.0018,
+          "value": 0
+        },
+        {
+          "count": 13659,
+          "documented": true,
+          "share": 0.4553,
+          "value": 1
+        },
+        {
+          "count": 15964,
+          "documented": true,
+          "share": 0.5321333333333333,
+          "value": 2
+        },
+        {
+          "count": 323,
+          "documented": true,
+          "share": 0.010766666666666667,
+          "value": 3
+        }
+      ],
+      "SEX": [
+        {
+          "count": 11888,
+          "documented": true,
+          "share": 0.39626666666666666,
+          "value": 1
+        },
+        {
+          "count": 18112,
+          "documented": true,
+          "share": 0.6037333333333333,
+          "value": 2
+        }
+      ]
+    },
+    "distributions": [
+      {
+        "column": "LIMIT_BAL",
+        "max": 1000000.0,
+        "min": 10000.0,
+        "p01": 10000.0,
+        "p50": 140000.0,
+        "p99": 500000.0,
+        "p999": 700000.0
+      },
+      {
+        "column": "AGE",
+        "max": 79.0,
+        "min": 21.0,
+        "p01": 22.0,
+        "p50": 34.0,
+        "p99": 60.0,
+        "p999": 69.0
+      },
+      {
+        "column": "BILL_AMT1",
+        "max": 964511.0,
+        "min": -165580.0,
+        "p01": -81.0,
+        "p50": 22381.5,
+        "p99": 350110.6799999999,
+        "p999": 519901.55200000014
+      },
+      {
+        "column": "BILL_AMT2",
+        "max": 983931.0,
+        "min": -69777.0,
+        "p01": -200.0,
+        "p50": 21200.0,
+        "p99": 337495.27999999997,
+        "p999": 509230.2410000003
+      },
+      {
+        "column": "BILL_AMT3",
+        "max": 1664089.0,
+        "min": -157264.0,
+        "p01": -200.0,
+        "p50": 20088.5,
+        "p99": 325030.38999999897,
+        "p999": 491956.76200000016
+      },
+      {
+        "column": "BILL_AMT4",
+        "max": 891586.0,
+        "min": -170000.0,
+        "p01": -212.01999999999998,
+        "p50": 19052.0,
+        "p99": 304997.26999999996,
+        "p999": 479800.178
+      },
+      {
+        "column": "BILL_AMT5",
+        "max": 927171.0,
+        "min": -81334.0,
+        "p01": -232.01,
+        "p50": 18104.5,
+        "p99": 285868.32999999996,
+        "p999": 454852.7950000016
+      },
+      {
+        "column": "BILL_AMT6",
+        "max": 961664.0,
+        "min": -339603.0,
+        "p01": -331.03,
+        "p50": 17071.0,
+        "p99": 279505.05999999965,
+        "p999": 447544.4830000003
+      },
+      {
+        "column": "PAY_AMT1",
+        "max": 873552.0,
+        "min": 0.0,
+        "p01": 0.0,
+        "p50": 2100.0,
+        "p99": 66522.17999999854,
+        "p999": 231788.76900000015
+      },
+      {
+        "column": "PAY_AMT2",
+        "max": 1684259.0,
+        "min": 0.0,
+        "p01": 0.0,
+        "p50": 2009.0,
+        "p99": 76651.01999999999,
+        "p999": 263113.11300000147
+      },
+      {
+        "column": "PAY_AMT3",
+        "max": 896040.0,
+        "min": 0.0,
+        "p01": 0.0,
+        "p50": 1800.0,
+        "p99": 70000.0,
+        "p999": 217035.9650000002
+      },
+      {
+        "column": "PAY_AMT4",
+        "max": 621000.0,
+        "min": 0.0,
+        "p01": 0.0,
+        "p50": 1500.0,
+        "p99": 67054.43999999961,
+        "p999": 200396.60500000033
+      },
+      {
+        "column": "PAY_AMT5",
+        "max": 426529.0,
+        "min": 0.0,
+        "p01": 0.0,
+        "p50": 1500.0,
+        "p99": 65607.55999999991,
+        "p999": 202319.68300000054
+      },
+      {
+        "column": "PAY_AMT6",
+        "max": 528666.0,
+        "min": 0.0,
+        "p01": 0.0,
+        "p50": 1500.0,
+        "p99": 82619.04999999935,
+        "p999": 220076.29500000007
+      }
+    ],
+    "duplicates": {
+      "n_duplicate_rows": 35,
+      "n_duplicate_rows_all_amounts_zero": 30,
+      "n_duplicate_rows_ignoring_target": 56,
+      "n_rows_in_duplicate_groups": 70,
+      "n_rows_sharing_candidate_features": 227
+    },
+    "implied_purchases": [
+      {
+        "month": 2,
+        "share_negative_if_settles_previous_bill": 0.004366666666666666,
+        "share_negative_if_settles_same_month_bill": 0.17103333333333334
+      },
+      {
+        "month": 3,
+        "share_negative_if_settles_previous_bill": 0.003966666666666667,
+        "share_negative_if_settles_same_month_bill": 0.1908
+      },
+      {
+        "month": 4,
+        "share_negative_if_settles_previous_bill": 0.004366666666666666,
+        "share_negative_if_settles_same_month_bill": 0.1801
+      },
+      {
+        "month": 5,
+        "share_negative_if_settles_previous_bill": 0.0038,
+        "share_negative_if_settles_same_month_bill": 0.15813333333333332
+      }
+    ],
+    "inactive_accounts": {
+      "n_all_amounts_zero": 795,
+      "n_all_amounts_zero_with_delay_in_pay_1": 495,
+      "n_all_bills_zero": 866
+    },
+    "missing_values_total": 0,
+    "n_candidate_feature_columns": 21,
+    "pay_code_counts": [
+      {
+        "PAY_1": 2759,
+        "PAY_2": 3782,
+        "PAY_3": 4085,
+        "PAY_4": 4348,
+        "PAY_5": 4546,
+        "PAY_6": 4895,
+        "code": -2,
+        "documented": false
+      },
+      {
+        "PAY_1": 5686,
+        "PAY_2": 6050,
+        "PAY_3": 5938,
+        "PAY_4": 5687,
+        "PAY_5": 5539,
+        "PAY_6": 5740,
+        "code": -1,
+        "documented": true
+      },
+      {
+        "PAY_1": 14737,
+        "PAY_2": 15730,
+        "PAY_3": 15764,
+        "PAY_4": 16455,
+        "PAY_5": 16947,
+        "PAY_6": 16286,
+        "code": 0,
+        "documented": false
+      },
+      {
+        "PAY_1": 3688,
+        "PAY_2": 28,
+        "PAY_3": 4,
+        "PAY_4": 2,
+        "PAY_5": 0,
+        "PAY_6": 0,
+        "code": 1,
+        "documented": true
+      },
+      {
+        "PAY_1": 2667,
+        "PAY_2": 3927,
+        "PAY_3": 3819,
+        "PAY_4": 3159,
+        "PAY_5": 2626,
+        "PAY_6": 2766,
+        "code": 2,
+        "documented": true
+      },
+      {
+        "PAY_1": 322,
+        "PAY_2": 326,
+        "PAY_3": 240,
+        "PAY_4": 180,
+        "PAY_5": 178,
+        "PAY_6": 184,
+        "code": 3,
+        "documented": true
+      },
+      {
+        "PAY_1": 76,
+        "PAY_2": 99,
+        "PAY_3": 76,
+        "PAY_4": 69,
+        "PAY_5": 84,
+        "PAY_6": 49,
+        "code": 4,
+        "documented": true
+      },
+      {
+        "PAY_1": 26,
+        "PAY_2": 25,
+        "PAY_3": 21,
+        "PAY_4": 35,
+        "PAY_5": 17,
+        "PAY_6": 13,
+        "code": 5,
+        "documented": true
+      },
+      {
+        "PAY_1": 11,
+        "PAY_2": 12,
+        "PAY_3": 23,
+        "PAY_4": 5,
+        "PAY_5": 4,
+        "PAY_6": 19,
+        "code": 6,
+        "documented": true
+      },
+      {
+        "PAY_1": 9,
+        "PAY_2": 20,
+        "PAY_3": 27,
+        "PAY_4": 58,
+        "PAY_5": 58,
+        "PAY_6": 46,
+        "code": 7,
+        "documented": true
+      },
+      {
+        "PAY_1": 19,
+        "PAY_2": 1,
+        "PAY_3": 3,
+        "PAY_4": 2,
+        "PAY_5": 1,
+        "PAY_6": 2,
+        "code": 8,
+        "documented": true
+      }
+    ],
+    "pay_status_profile": {
+      "following_month": [
+        {
+          "code": -2,
+          "n": 16761,
+          "share_no_payment": 0.6169082990275043,
+          "share_paid_in_full": 0.934701188731477,
+          "share_statement_not_positive": 0.6336137461965277
+        },
+        {
+          "code": -1,
+          "n": 23214,
+          "share_no_payment": 0.10067200827087103,
+          "share_paid_in_full": 0.9841116995666828,
+          "share_statement_not_positive": 0.10528129576979409
+        },
+        {
+          "code": 0,
+          "n": 64896,
+          "share_no_payment": 0.03949395956607495,
+          "share_paid_in_full": 0.0020444751989431636,
+          "share_statement_not_positive": 0.020186143984220906
+        },
+        {
+          "code": 1,
+          "n": 34,
+          "share_no_payment": 0.29411764705882354,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.6176470588235294
+        },
+        {
+          "code": 2,
+          "n": 13531,
+          "share_no_payment": 0.48185647771783313,
+          "share_paid_in_full": 0.002955665024630542,
+          "share_statement_not_positive": 0.024831867563372995
+        },
+        {
+          "code": 3,
+          "n": 924,
+          "share_no_payment": 0.7619047619047619,
+          "share_paid_in_full": 0.0021645021645021645,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 4,
+          "n": 328,
+          "share_no_payment": 0.774390243902439,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 5,
+          "n": 98,
+          "share_no_payment": 0.8469387755102041,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 6,
+          "n": 44,
+          "share_no_payment": 0.9545454545454546,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 7,
+          "n": 163,
+          "share_no_payment": 0.9877300613496932,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 8,
+          "n": 7,
+          "share_no_payment": 1.0,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        }
+      ],
+      "same_month": [
+        {
+          "code": -2,
+          "n": 16761,
+          "share_no_payment": 0.551160431955134,
+          "share_paid_in_full": 0.9533451908605829,
+          "share_statement_not_positive": 0.5639281665771732
+        },
+        {
+          "code": -1,
+          "n": 23214,
+          "share_no_payment": 0.22167657448091668,
+          "share_paid_in_full": 0.7583741830065359,
+          "share_statement_not_positive": 0.15637115533729645
+        },
+        {
+          "code": 0,
+          "n": 64896,
+          "share_no_payment": 0.08020525147928995,
+          "share_paid_in_full": 0.05140975178729215,
+          "share_statement_not_positive": 0.040849975345167655
+        },
+        {
+          "code": 1,
+          "n": 34,
+          "share_no_payment": 0.35294117647058826,
+          "share_paid_in_full": 0.4090909090909091,
+          "share_statement_not_positive": 0.35294117647058826
+        },
+        {
+          "code": 2,
+          "n": 13531,
+          "share_no_payment": 0.2778065183652354,
+          "share_paid_in_full": 0.07247156470949892,
+          "share_statement_not_positive": 0.0383563668612815
+        },
+        {
+          "code": 3,
+          "n": 924,
+          "share_no_payment": 0.6082251082251082,
+          "share_paid_in_full": 0.0021645021645021645,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 4,
+          "n": 328,
+          "share_no_payment": 0.8109756097560976,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 5,
+          "n": 98,
+          "share_no_payment": 0.8673469387755102,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 6,
+          "n": 44,
+          "share_no_payment": 0.7954545454545454,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 7,
+          "n": 163,
+          "share_no_payment": 0.9877300613496932,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 8,
+          "n": 7,
+          "share_no_payment": 0.8571428571428571,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        }
+      ],
+      "september_same_month": [
+        {
+          "code": -2,
+          "n": 2759,
+          "share_no_payment": 0.33055454874954693,
+          "share_paid_in_full": 0.9286109573879358,
+          "share_statement_not_positive": 0.34505255527364986
+        },
+        {
+          "code": -1,
+          "n": 5686,
+          "share_no_payment": 0.1797397115722828,
+          "share_paid_in_full": 0.7728276138872165,
+          "share_statement_not_positive": 0.12363700316567007
+        },
+        {
+          "code": 0,
+          "n": 14737,
+          "share_no_payment": 0.01771052453009432,
+          "share_paid_in_full": 0.03431338637149775,
+          "share_statement_not_positive": 0.01913550926240076
+        },
+        {
+          "code": 1,
+          "n": 3688,
+          "share_no_payment": 0.5938177874186551,
+          "share_paid_in_full": 0.26701153999204136,
+          "share_statement_not_positive": 0.3186008676789588
+        },
+        {
+          "code": 2,
+          "n": 2667,
+          "share_no_payment": 0.20434945631796025,
+          "share_paid_in_full": 0.04877112135176651,
+          "share_statement_not_positive": 0.023622047244094488
+        },
+        {
+          "code": 3,
+          "n": 322,
+          "share_no_payment": 0.6180124223602484,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 4,
+          "n": 76,
+          "share_no_payment": 0.7631578947368421,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 5,
+          "n": 26,
+          "share_no_payment": 0.8846153846153846,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 6,
+          "n": 11,
+          "share_no_payment": 1.0,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 7,
+          "n": 9,
+          "share_no_payment": 1.0,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        },
+        {
+          "code": 8,
+          "n": 19,
+          "share_no_payment": 1.0,
+          "share_paid_in_full": 0.0,
+          "share_statement_not_positive": 0.0
+        }
+      ]
+    },
+    "payment_timing": [
+      {
+        "month": 1,
+        "n_paying": 24751,
+        "share_equals_both": 0.027029210940972083,
+        "share_equals_previous_bill": 0.1642761908609753,
+        "share_equals_same_month_bill": 0.027110015756939113
+      },
+      {
+        "month": 2,
+        "n_paying": 24604,
+        "share_equals_both": 0.025686880182084215,
+        "share_equals_previous_bill": 0.1661112014306617,
+        "share_equals_same_month_bill": 0.025849455373110064
+      },
+      {
+        "month": 3,
+        "n_paying": 24032,
+        "share_equals_both": 0.02663115845539281,
+        "share_equals_previous_bill": 0.16989846870838882,
+        "share_equals_same_month_bill": 0.026797603195739015
+      },
+      {
+        "month": 4,
+        "n_paying": 23592,
+        "share_equals_both": 0.02729738894540522,
+        "share_equals_previous_bill": 0.1848507968802984,
+        "share_equals_same_month_bill": 0.027466937945066123
+      },
+      {
+        "month": 5,
+        "n_paying": 23297,
+        "share_equals_both": 0.024852985362922266,
+        "share_equals_previous_bill": 0.19813709919732153,
+        "share_equals_same_month_bill": 0.024981757307807873
+      }
+    ],
+    "recoded_rows": {
+      "EDUCATION": 345,
+      "MARRIAGE": 54
+    },
+    "share_undocumented_pay_codes": 0.6685222222222222,
+    "status_without_bill": [
+      {
+        "month": 1,
+        "n_bill_not_positive": 2598,
+        "n_with_code_minus_2": 903,
+        "n_with_delay_code": 1689
+      },
+      {
+        "month": 2,
+        "n_bill_not_positive": 3175,
+        "n_with_code_minus_2": 2106,
+        "n_with_delay_code": 84
+      },
+      {
+        "month": 3,
+        "n_bill_not_positive": 3525,
+        "n_with_code_minus_2": 2512,
+        "n_with_delay_code": 125
+      },
+      {
+        "month": 4,
+        "n_bill_not_positive": 3870,
+        "n_with_code_minus_2": 2902,
+        "n_with_delay_code": 96
+      },
+      {
+        "month": 5,
+        "n_bill_not_positive": 4161,
+        "n_with_code_minus_2": 3100,
+        "n_with_delay_code": 52
+      },
+      {
+        "month": 6,
+        "n_bill_not_positive": 4708,
+        "n_with_code_minus_2": 3467,
+        "n_with_delay_code": 22
+      }
+    ],
+    "target": {
+      "default_rate": 0.2212,
+      "n_defaults": 6636,
+      "n_rows": 30000
+    }
+  },
+  "provenance": {
+    "data_sha256": "30c6be3abd8dcfd3e6096c828bad8c2f011238620f5369220bd60cfc82700933",
+    "git_sha": "ce53591df360cacd7b591419cf6110c968ddc8cc",
+    "seed": 20261004,
+    "uncommitted_code_changes": false
+  }
+}
