@@ -11,8 +11,9 @@ A phase is not done until every applicable item is satisfied or an exception is 
 ## 2. Splitting and leakage
 - [ ] Hold-out split created once, saved by index, seeded; prevalence of the event matches across splits.
 - [ ] All fitted transformations are fitted on training data only (inside CV folds when tuning).
-- [ ] No feature uses information from the target period. Features are derived only from PAY/BILL/PAY_AMT
-      of months that precede the October outcome.
+- [ ] No feature uses information from the target period. Features are derived only from the candidate
+      columns of ADR-009 (limit, age, education and the PAY/BILL/PAY_AMT months that precede the October
+      outcome); the leakage check on `PAY_1` required by ADR-009 is run on training data.
 - [ ] Test set evaluated once per final model; nothing changed afterwards because of it.
 - [ ] Suspicious performance is investigated: an AUC far above what public analyses of this dataset
       report (roughly the high-0.70s) is a leakage alarm, not a success.
