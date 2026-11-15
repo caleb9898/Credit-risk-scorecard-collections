@@ -1,0 +1,21 @@
+# Every value here is an ASSUMPTION, not an estimate from data. Each must be justified in
+# docs/DECISIONS.md before use, shown with the label "ASSUMPTION" in any report, and
+# accompanied by a sensitivity analysis over the grid below.
+ead:
+  # EAD proxy = max(BILL_AMT1, 0) + ccf * max(LIMIT_BAL - BILL_AMT1, 0)
+  # The dataset does not contain the balance at default, so ccf cannot be estimated.
+  ccf_grid: [0.0, 0.25, 0.50, 0.75, 1.0]
+  ccf_base: null           # choose and justify in Phase 8
+lgd:
+  # No recovery data exists in this dataset, so LGD cannot be modelled; it is a scenario input.
+  lgd_grid: [0.40, 0.55, 0.70, 0.85]
+  lgd_base: null           # choose and justify in Phase 8
+collections:
+  # Treatment effects are not observable here. Keep them as explicit scenario inputs.
+  cure_uplift_grid: [0.0, 0.05, 0.10, 0.20]   # absolute increase in cure probability
+  contact_cost_per_account: null              # set in Phase 10/13 with rationale
+  capacity_grid_pct: [0.05, 0.10, 0.20, 0.30] # share of accounts that can be worked per cycle
+policy:
+  cost_ratio_fn_to_fp_grid: [2, 5, 10, 20]    # cost of missing a defaulter vs a false alarm
+stress:
+  default_rate_multiplier_grid: [1.0, 1.25, 1.5, 2.0]  # scenario multipliers on baseline PD

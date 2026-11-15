@@ -1,0 +1,9 @@
+# Global, non-assumption settings. Change deliberately and record why in docs/DECISIONS.md.
+seed: 20261004
+split:
+  test_size: 0.20          # stratified hold-out, touched once per final model
+  cv_folds: 5
+  cv_repeats: 3
+data:
+  raw_file: default_of_credit_card_clients.xls
+  raw_sha256: 30c6be3abd8dcfd3e6096c828bad8c2f011238620f5369220bd60cfc82700933
