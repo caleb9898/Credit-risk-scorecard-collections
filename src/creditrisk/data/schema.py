@@ -28,6 +28,9 @@ DEMOGRAPHIC_COLS = ["LIMIT_BAL", "SEX", "EDUCATION", "MARRIAGE", "AGE"]
 TARGET = "DEFAULT"
 CANONICAL_COLUMNS = DEMOGRAPHIC_COLS + PAY_COLS + BILL_COLS + PAYAMT_COLS + [TARGET]
 
+# Calendar month (2005) behind each month index, for tables and figures.
+MONTH_LABELS = {1: "Sep", 2: "Aug", 3: "Jul", 4: "Jun", 5: "May", 6: "Apr"}
+
 # UCI layout: X1..X5 demographics, X6..X11 PAY, X12..X17 BILL_AMT, X18..X23 PAY_AMT, Y target.
 _UCI_RENAMES = {
     "X1": "LIMIT_BAL",
