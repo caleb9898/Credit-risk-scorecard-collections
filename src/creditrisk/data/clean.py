@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from creditrisk.data.schema import DOCUMENTED_CODES
+
 # Documented categories: EDUCATION 1 = graduate school, 2 = university, 3 = high school,
 # 4 = others; MARRIAGE 1 = married, 2 = single, 3 = others.
 EDUCATION_OTHERS = 4
@@ -20,10 +22,6 @@ MARRIAGE_OTHERS = 3
 RECODES: dict[str, dict[int, int]] = {
     "EDUCATION": {0: EDUCATION_OTHERS, 5: EDUCATION_OTHERS, 6: EDUCATION_OTHERS},
     "MARRIAGE": {0: MARRIAGE_OTHERS},
-}
-VALID_CODES: dict[str, set[int]] = {
-    "EDUCATION": {1, 2, 3, 4},
-    "MARRIAGE": {1, 2, 3},
 }
 
 
@@ -36,7 +34,7 @@ def recode_undocumented_codes(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     for column, mapping in RECODES.items():
         out[column] = out[column].replace(mapping)
-        unexpected = sorted(set(out[column].unique()) - VALID_CODES[column])
+        unexpected = sorted(set(out[column].unique()) - DOCUMENTED_CODES[column])
         if unexpected:
             raise ValueError(f"{column} has codes with no recorded decision: {unexpected}")
     return out

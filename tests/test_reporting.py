@@ -37,3 +37,25 @@ def test_save_metrics_rejects_nan(tmp_path):
     # NaN is not valid JSON and usually hides an empty denominator: fail loudly.
     with pytest.raises(ValueError):
         reporting.save_metrics("demo", {"rate": float("nan")}, "abc", metrics_dir=tmp_path)
+
+
+def test_provenance_flags_uncommitted_code(monkeypatch):
+    answers = {"rev-parse": "abc123", "status": " M src/creditrisk/reporting.py"}
+    monkeypatch.setattr(reporting, "_git", lambda *args: answers[args[0]])
+    prov = reporting.provenance("hash")
+    assert prov["git_sha"] == "abc123"
+    assert prov["uncommitted_code_changes"] is True
+
+
+def test_provenance_with_clean_code(monkeypatch):
+    answers = {"rev-parse": "abc123", "status": ""}
+    monkeypatch.setattr(reporting, "_git", lambda *args: answers[args[0]])
+    assert reporting.provenance("hash")["uncommitted_code_changes"] is False
+
+
+def test_provenance_without_git(monkeypatch):
+    # No git available: the commit is unknown, so the numbers cannot be called reproducible.
+    monkeypatch.setattr(reporting, "_git", lambda *args: None)
+    prov = reporting.provenance("hash")
+    assert prov["git_sha"] == "unknown"
+    assert prov["uncommitted_code_changes"] is True
