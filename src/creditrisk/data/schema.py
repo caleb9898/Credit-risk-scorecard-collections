@@ -28,8 +28,9 @@ DEMOGRAPHIC_COLS = ["LIMIT_BAL", "SEX", "EDUCATION", "MARRIAGE", "AGE"]
 TARGET = "DEFAULT"
 CANONICAL_COLUMNS = DEMOGRAPHIC_COLS + PAY_COLS + BILL_COLS + PAYAMT_COLS + [TARGET]
 
-# Calendar month (2005) behind each month index, for tables and figures.
-MONTH_LABELS = {1: "Sep", 2: "Aug", 3: "Jul", 4: "Jun", 5: "May", 6: "Apr"}
+# Calendar month (2005) behind each month index, for tables and figures. The labels are in
+# Spanish because everything the project shows to a reader is written in Spanish.
+MONTH_LABELS = {1: "Sep", 2: "Ago", 3: "Jul", 4: "Jun", 5: "May", 6: "Abr"}
 
 # Sensitive attributes are never model inputs (ADR-002); every other non-target column is a
 # candidate feature.
