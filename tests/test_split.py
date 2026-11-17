@@ -1,8 +1,10 @@
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from creditrisk.config import load_config
+from creditrisk.config import REPO_ROOT, load_config
 from creditrisk.data import schema as sc
 from creditrisk.data import split as sp
 from creditrisk.data.load import load_project_data
@@ -73,6 +75,14 @@ def test_load_holdout_rejects_unknown_labels(tmp_path):
         sp.load_holdout(path, n_rows=2)
 
 
+@pytest.mark.parametrize("rows", [[0, 0, 1], [0, 2, 1], [1, 2, 3]])
+def test_load_holdout_rejects_repeated_shuffled_or_missing_rows(tmp_path, rows):
+    path = tmp_path / "holdout_index.csv"
+    pd.DataFrame({"row": rows, "split": ["train", "test", "train"]}).to_csv(path, index=False)
+    with pytest.raises(ValueError, match="once each"):
+        sp.load_holdout(path, n_rows=3)
+
+
 def test_labels_hash_changes_when_one_row_moves():
     labels = sp.make_holdout(_target(), 0.2, seed=1)
     moved = labels.copy()
@@ -109,7 +119,16 @@ def test_cv_is_reproducible():
 def test_cv_defaults_come_from_the_project_config():
     cfg = load_config("project")
     cv = sp.make_cv()
-    assert cv.get_n_splits() == cfg["split"]["cv_folds"] * cfg["split"]["cv_repeats"]
+    assert cv.cvargs["n_splits"] == cfg["split"]["cv_folds"]
+    assert cv.n_repeats == cfg["split"]["cv_repeats"]
+    assert cv.random_state == cfg["seed"]
+
+
+def test_cv_fingerprint_changes_with_the_data():
+    y = _target()
+    assert len(sp.cv_folds_sha256(y)) == 64
+    assert sp.cv_folds_sha256(y) == sp.cv_folds_sha256(y.copy())
+    assert sp.cv_folds_sha256(y) != sp.cv_folds_sha256(y.iloc[::-1].reset_index(drop=True))
 
 
 # --- twins across the split -----------------------------------------------------------------
@@ -131,17 +150,25 @@ def test_twins_across_split_known_answer():
     labels = pd.Series(["train", "test", "test", "train", "train", "test", "test", "test"])
     assert sp.twins_across_split(df, labels) == {
         "n_test_rows_with_twin_in_train": 2,
+        "n_test_rows_with_twin_in_train_all_amounts_zero": 2,
         "n_train_rows_with_twin_in_test": 1,
+        "n_train_rows_with_twin_in_train": 2,  # rows 3 and 4
     }
+
+
+def test_twins_across_split_separates_active_accounts():
+    active = {"AGE": 30, "BILL_AMT1": 500}
+    df = _frame([active, active, {"AGE": 45}, {"AGE": 45}])
+    labels = pd.Series(["train", "test", "train", "test"])
+    out = sp.twins_across_split(df, labels)
+    assert out["n_test_rows_with_twin_in_train"] == 2
+    assert out["n_test_rows_with_twin_in_train_all_amounts_zero"] == 1  # only the AGE=45 pair
 
 
 def test_twins_across_split_without_twins():
     df = _frame([{"AGE": 30}, {"AGE": 31}, {"AGE": 32}])
     labels = pd.Series(["train", "test", "train"])
-    assert sp.twins_across_split(df, labels) == {
-        "n_test_rows_with_twin_in_train": 0,
-        "n_train_rows_with_twin_in_test": 0,
-    }
+    assert set(sp.twins_across_split(df, labels).values()) == {0}
 
 
 # --- the split saved in the repository --------------------------------------------------------
@@ -181,3 +208,33 @@ def test_split_report_is_consistent():
     assert low < report["test"]["default_rate"] < high
     assert report["cv"]["n_folds_total"] == 15
     assert report["cv"]["validation_rows_min"] <= report["cv"]["validation_rows_max"]
+
+
+def test_part_summary_known_wilson_interval():
+    # 20 defaults in 100 rows: the 95% Wilson interval is (0.1334, 0.2888), worked out by hand:
+    # centre = (p + z^2/2n) / (1 + z^2/n),
+    # half-width = z * sqrt(p(1-p)/n + z^2/4n^2) / (1 + z^2/n), with z = 1.96.
+    summary = sp._part_summary(pd.Series([1] * 20 + [0] * 80))
+    assert summary["n_rows"] == 100
+    assert summary["n_defaults"] == 20
+    assert summary["default_rate"] == 0.2
+    assert summary["default_rate_ci95"] == pytest.approx([0.1334, 0.2888], abs=1e-4)
+
+
+def test_saved_metrics_pin_the_split_and_the_folds():
+    # The committed metrics must describe the committed index and today's folds. If the folds
+    # differ (for example after a library upgrade), every cross-validated result would change.
+    saved = json.loads((REPO_ROOT / "reports" / "metrics" / "split.json").read_text("utf-8"))
+    saved = saved["metrics"]
+    raw, _ = load_project_data()
+    report = sp.split_report(raw, sp.load_holdout(n_rows=len(raw)))
+    assert saved["labels_sha256"] == report["labels_sha256"]
+    assert saved["cv"]["folds_sha256"] == report["cv"]["folds_sha256"]
+    assert saved["twins"] == report["twins"]
+    for part in ("train", "test"):
+        assert saved[part]["n_rows"] == report[part]["n_rows"]
+        assert saved[part]["n_defaults"] == report[part]["n_defaults"]
+
+
+def test_main_rejects_unknown_arguments():
+    assert sp.main(["--overwrite"]) == 2

@@ -5,13 +5,15 @@ with one line per row of the raw file: its position (0 = first data row) and ``t
 Later phases never create the split again. They call ``load_train`` for all their work and
 ``load_test`` only for the final evaluation of a finished model.
 
-Run ``python -m creditrisk.data.split`` to create the index file (if it does not exist yet) and
-write ``reports/metrics/split.json``.
+Run ``python -m creditrisk.data.split`` to check the saved index against the project seed and
+write ``reports/metrics/split.json``. The index file is created only with ``--create``, which is
+used once, when the project is set up; an existing file is never replaced.
 """
 
 from __future__ import annotations
 
 import hashlib
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -22,7 +24,7 @@ from statsmodels.stats.proportion import proportion_confint
 from creditrisk.config import REPO_ROOT, load_config
 from creditrisk.data.clean import recode_undocumented_codes
 from creditrisk.data.load import load_project_data
-from creditrisk.data.schema import CANDIDATE_FEATURE_COLS, TARGET
+from creditrisk.data.schema import BILL_COLS, CANDIDATE_FEATURE_COLS, PAYAMT_COLS, TARGET
 from creditrisk.reporting import save_metrics
 
 INDEX_PATH = REPO_ROOT / "data" / "splits" / "holdout_index.csv"
@@ -103,7 +105,8 @@ def make_cv(
 ) -> RepeatedStratifiedKFold:
     """Repeated stratified k-fold for model selection on the training part.
 
-    Defaults (5 folds, 3 repeats, project seed) come from ``config/project.yaml``.
+    Defaults (5 folds, 3 repeats, project seed) come from ``config/project.yaml``. The folds
+    depend on the order of the rows, so always split ``load_train()`` in its original order.
     """
     config = load_config("project")
     return RepeatedStratifiedKFold(
@@ -113,24 +116,50 @@ def make_cv(
     )
 
 
+def cv_folds_sha256(train_target: pd.Series) -> str:
+    """SHA-256 of the validation rows of every fold that ``make_cv()`` gives for this target.
+
+    The folds are not saved to a file. This fingerprint is saved in the metrics instead, and a
+    test compares it with the folds produced today, so a change of folds (for example after a
+    library upgrade) cannot go unnoticed.
+    """
+    digest = hashlib.sha256()
+    for _, validation_rows in make_cv().split(np.zeros(len(train_target)), train_target):
+        digest.update(",".join(str(row) for row in validation_rows).encode("utf-8"))
+        digest.update(b"\n")
+    return digest.hexdigest()
+
+
 def twins_across_split(df: pd.DataFrame, labels: pd.Series) -> dict[str, int]:
     """Count rows that have a twin on the other side of the split.
 
     Two rows are twins when they are identical on every candidate model feature. A test row with
     a twin in train is not a fully independent test case, so the number is reported (ADR-008).
+
+    - ``n_test_rows_with_twin_in_train`` and, of those, how many are inactive accounts
+      (``..._all_amounts_zero``: every bill and payment at zero).
+    - ``n_train_rows_with_twin_in_test``.
+    - ``n_train_rows_with_twin_in_train``: twins inside train, which can fall in different
+      cross-validation folds.
     """
     features = df[CANDIDATE_FEATURE_COLS]
     is_test = (labels == "test").to_numpy()
     train_profiles = features[~is_test].drop_duplicates()
     test_profiles = features[is_test].drop_duplicates()
 
-    def count_matches(rows: pd.DataFrame, profiles: pd.DataFrame) -> int:
+    def has_twin_in(rows: pd.DataFrame, profiles: pd.DataFrame) -> np.ndarray:
         merged = rows.merge(profiles, on=CANDIDATE_FEATURE_COLS, how="left", indicator=True)
-        return int((merged["_merge"] == "both").sum())
+        return (merged["_merge"] == "both").to_numpy()
 
+    test_with_twin = has_twin_in(features[is_test], train_profiles)
+    test_inactive = (df.loc[is_test, BILL_COLS + PAYAMT_COLS] == 0).all(axis=1).to_numpy()
     return {
-        "n_test_rows_with_twin_in_train": count_matches(features[is_test], train_profiles),
-        "n_train_rows_with_twin_in_test": count_matches(features[~is_test], test_profiles),
+        "n_test_rows_with_twin_in_train": int(test_with_twin.sum()),
+        "n_test_rows_with_twin_in_train_all_amounts_zero": int(
+            (test_with_twin & test_inactive).sum()
+        ),
+        "n_train_rows_with_twin_in_test": int(has_twin_in(features[~is_test], test_profiles).sum()),
+        "n_train_rows_with_twin_in_train": int(features[~is_test].duplicated(keep=False).sum()),
     }
 
 
@@ -156,7 +185,7 @@ def split_report(raw: pd.DataFrame, labels: pd.Series) -> dict:
 
     folds = list(make_cv().split(np.zeros(len(train_target)), train_target))
     validation_rows = [len(valid) for _, valid in folds]
-    validation_rates = [float(train_target.iloc[valid].mean()) for _, valid in folds]
+    validation_defaults = [int(train_target.iloc[valid].sum()) for _, valid in folds]
 
     return {
         "test_size": config["split"]["test_size"],
@@ -171,29 +200,44 @@ def split_report(raw: pd.DataFrame, labels: pd.Series) -> dict:
             "n_folds_total": len(folds),
             "validation_rows_min": min(validation_rows),
             "validation_rows_max": max(validation_rows),
-            "validation_default_rate_min": min(validation_rates),
-            "validation_default_rate_max": max(validation_rates),
+            "validation_defaults_min": min(validation_defaults),
+            "validation_defaults_max": max(validation_defaults),
+            "folds_sha256": cv_folds_sha256(train_target),
         },
     }
 
 
-def main() -> int:
-    """Create the hold-out index if it does not exist, check it, and save ``split.json``."""
+def main(argv: list[str] | None = None) -> int:
+    """CLI: check the saved hold-out index against the seed and save ``split.json``.
+
+    ``--create`` writes the index file when it does not exist yet. Without it a missing file is
+    an error, so that a new test set is never created by accident.
+    """
+    args = sys.argv[1:] if argv is None else argv
+    if args not in ([], ["--create"]):
+        print("usage: python -m creditrisk.data.split [--create]", file=sys.stderr)
+        return 2
+
     config = load_config("project")
     raw, data_sha256 = load_project_data()
     expected = make_holdout(raw[TARGET], config["split"]["test_size"], config["seed"])
 
     if INDEX_PATH.exists():
-        # The hold-out is created once. An existing file is checked, never replaced.
+        # The saved file is the authority: it is checked, never replaced.
         if not load_holdout(n_rows=len(raw)).equals(expected):
             raise ValueError(
-                f"{INDEX_PATH.name} does not match the split given by the project seed. "
-                "Find out what changed (seed, data or library version) before going on."
+                f"{INDEX_PATH.name} does not match the split given by the project seed. Keep the "
+                "file and find out what changed (seed, data or library version) before going on."
             )
-        print(f"hold-out index: {INDEX_PATH.name} already exists and matches the seed")
-    else:
+        print(f"hold-out index: {INDEX_PATH.name} matches the project seed")
+    elif args == ["--create"]:
         save_holdout(expected)
         print(f"hold-out index: created {INDEX_PATH.name}")
+    else:
+        raise FileNotFoundError(
+            f"{INDEX_PATH} is missing. It is part of the repository; restore it from git. "
+            "Use --create only when setting up the project for the first time."
+        )
 
     report = split_report(raw, expected)
     path = save_metrics("split", report, data_sha256)

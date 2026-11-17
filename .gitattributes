@@ -1,0 +1,2 @@
+data/splits/*.csv text eol=lf
+reports/metrics/*.json text eol=lf

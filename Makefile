@@ -29,7 +29,7 @@ notebooks:
 data-check:
 	python -m creditrisk.data.schema data/raw/$(FILE)
 
-# Create the hold-out index (only if it does not exist yet) and save the split metrics.
+# Check the saved hold-out index against the project seed and save the split metrics.
 split:
 	python -m creditrisk.data.split
 
