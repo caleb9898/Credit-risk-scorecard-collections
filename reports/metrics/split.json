@@ -1,11 +1,12 @@
 {
   "metrics": {
     "cv": {
+      "folds_sha256": "a5b403dffcaf043cf5c075eeddfe57d0572befd94773d541ef32b1cf6642a1f5",
       "n_folds": 5,
       "n_folds_total": 15,
       "n_repeats": 3,
-      "validation_default_rate_max": 0.22125,
-      "validation_default_rate_min": 0.22104166666666666,
+      "validation_defaults_max": 1062,
+      "validation_defaults_min": 1061,
       "validation_rows_max": 4800,
       "validation_rows_min": 4800
     },
@@ -32,12 +33,14 @@
     },
     "twins": {
       "n_test_rows_with_twin_in_train": 43,
-      "n_train_rows_with_twin_in_test": 42
+      "n_test_rows_with_twin_in_train_all_amounts_zero": 41,
+      "n_train_rows_with_twin_in_test": 42,
+      "n_train_rows_with_twin_in_train": 140
     }
   },
   "provenance": {
     "data_sha256": "30c6be3abd8dcfd3e6096c828bad8c2f011238620f5369220bd60cfc82700933",
-    "git_sha": "ff62d692c37a68449ecff2ad64189d40fe6a2056",
+    "git_sha": "072c8772c16e6ecbb59532efc4517e7e2c17f87d",
     "seed": 20261004,
     "uncommitted_code_changes": false
   }

@@ -170,26 +170,38 @@ conjunto de test sea siempre el mismo. Las cifras están en `reports/metrics/spl
 Decisiones:
 - **La partición se crea una sola vez y se guarda en el repositorio**, en
   `data/splits/holdout_index.csv` (una línea por fila del archivo crudo: su posición y `train` o
-  `test`). Regenerarla solo desde la semilla dependería de la versión de las librerías; el archivo
-  guardado fija el test. Es la única excepción a "no subir datos aparte del archivo crudo", y no
-  contiene datos de clientes, solo posiciones. `make split` verifica el archivo si ya existe y nunca
-  lo reemplaza; un test comprueba que coincide con lo que produce la semilla del proyecto.
+  `test`). Regenerarla solo desde la semilla podría dar otro resultado con otra versión de las
+  librerías; el archivo guardado fija el test. Además del archivo crudo, es el único archivo bajo
+  `data/` que se sube al repositorio, y no contiene datos de clientes, solo posiciones.
+  `make split` compara el archivo con lo que produce la semilla del proyecto y nunca lo reemplaza;
+  si el archivo falta, da error en lugar de crear un test nuevo. Un test hace la misma comparación.
+  Si esa comparación falla, el archivo guardado manda: se conserva y se investiga qué cambió
+  (semilla, datos o versión de una librería).
 - **Las filas se identifican por su posición en el archivo crudo** (0 a 29,999). La columna `ID` se
   descarta al cargar (ADR-008), y la posición es estable porque el hash del archivo está fijado.
 - **Se estratifica solo por el target.** Train: 24,000 filas y 5,309 defaults; test: 6,000 filas y
-  1,327 defaults. La tasa de default es 22.12% en ambas partes, y el intervalo de confianza del 95%
-  de la tasa en test va de 21.1% a 23.2%.
-- **Los folds de validación cruzada no se guardan en archivo.** Se generan con la semilla del
-  proyecto sobre train (`creditrisk.data.split.make_cv`) y un test verifica que no cambian. Los 15
-  folds de validación tienen 4,800 filas cada uno, con tasas de default entre 22.10% y 22.13%.
+  1,327 defaults. La tasa de default es 22.12% en ambas partes, con una diferencia de 0.004 puntos
+  porcentuales. Esto se cumple por construcción: la estratificación reparte los defaults en
+  proporción. Como referencia de la precisión con que 6,000 filas estiman una tasa, el intervalo de
+  Wilson del 95% para la tasa de test va de 21.1% a 23.2%.
+- **Los folds de validación cruzada no se guardan en archivo, pero quedan fijados por una huella.**
+  Se generan con la semilla del proyecto sobre train, en su orden original
+  (`creditrisk.data.split.make_cv`). Los 15 folds de validación tienen 4,800 filas cada uno, con
+  1,061 o 1,062 defaults. Su huella SHA-256 está guardada en `split.json`, y un test la compara con
+  los folds que se generan hoy: si una actualización de librerías los cambiara, el test fallaría en
+  vez de cambiar en silencio todos los resultados de validación cruzada.
 - **Los gemelos no se mueven de lado.** 43 de las 6,000 filas de test tienen un gemelo en train en
-  las variables candidatas del modelo (y 42 filas de train tienen un gemelo en test). Forzar que
-  queden del mismo lado supondría que son el mismo cliente, cosa que el archivo no permite afirmar
-  (ADR-008). Se reporta el conteo.
-- **Acceso al test.** El código de las fases siguientes usa `load_train()` para todo. `load_test()`
-  se reserva para la evaluación final de un modelo terminado: una vez por modelo, sin cambiar nada
-  después por lo que muestre.
+  las variables candidatas del modelo, y 41 de esas 43 son cuentas inactivas (todas las facturas y
+  pagos en cero). 42 filas de train tienen un gemelo en test, y 140 filas de train tienen un gemelo
+  dentro de train, que puede caer en otro fold. Forzar que queden del mismo lado supondría que son
+  el mismo cliente, cosa que el archivo no permite afirmar (ADR-008). El efecto posible es que el
+  test y la validación cruzada se vean ligeramente optimistas.
+- **Acceso al test.** El código de las fases siguientes debe usar `load_train()` para todo.
+  `load_test()` se reserva para la evaluación final de un modelo terminado: una vez por modelo, sin
+  cambiar nada después por lo que muestre. Un test revisa el código y los notebooks y falla si un
+  archivo que no está en una lista corta carga el test o el archivo completo.
 
 Limitación: train y test vienen del mismo período (abril a septiembre de 2005, resultado en
 octubre), así que el test mide el desempeño dentro de la misma foto y no hacia el futuro. No
-sustituye a una validación fuera de tiempo, que estos datos no permiten (ADR-003).
+sustituye a una validación fuera de tiempo, que estos datos no permiten (ADR-003). Además, las 43
+filas de test con gemelo en train no son casos de prueba del todo independientes.
