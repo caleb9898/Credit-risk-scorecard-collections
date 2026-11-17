@@ -161,3 +161,35 @@ Consecuencias: si la verificación de `PAY_1` da la alarma, el tratamiento de `P
 nuevo en este registro antes de cerrar ningún modelo. Alternativa considerada: excluir `PAY_1` ahora
 y modelar solo con los meses 2–6. Rechazada porque descartaría el comportamiento más reciente sin
 evidencia de que haya fuga.
+
+## ADR-010 — Mecánica de la partición hold-out y de la validación cruzada — *Aceptada*
+Contexto: ADR-003 fija el diseño (hold-out estratificado 80/20 y validación cruzada estratificada
+de 5 folds con 3 repeticiones). Faltaba decidir cómo se crea y se guarda la partición para que el
+conjunto de test sea siempre el mismo. Las cifras están en `reports/metrics/split.json`.
+
+Decisiones:
+- **La partición se crea una sola vez y se guarda en el repositorio**, en
+  `data/splits/holdout_index.csv` (una línea por fila del archivo crudo: su posición y `train` o
+  `test`). Regenerarla solo desde la semilla dependería de la versión de las librerías; el archivo
+  guardado fija el test. Es la única excepción a "no subir datos aparte del archivo crudo", y no
+  contiene datos de clientes, solo posiciones. `make split` verifica el archivo si ya existe y nunca
+  lo reemplaza; un test comprueba que coincide con lo que produce la semilla del proyecto.
+- **Las filas se identifican por su posición en el archivo crudo** (0 a 29,999). La columna `ID` se
+  descarta al cargar (ADR-008), y la posición es estable porque el hash del archivo está fijado.
+- **Se estratifica solo por el target.** Train: 24,000 filas y 5,309 defaults; test: 6,000 filas y
+  1,327 defaults. La tasa de default es 22.12% en ambas partes, y el intervalo de confianza del 95%
+  de la tasa en test va de 21.1% a 23.2%.
+- **Los folds de validación cruzada no se guardan en archivo.** Se generan con la semilla del
+  proyecto sobre train (`creditrisk.data.split.make_cv`) y un test verifica que no cambian. Los 15
+  folds de validación tienen 4,800 filas cada uno, con tasas de default entre 22.10% y 22.13%.
+- **Los gemelos no se mueven de lado.** 43 de las 6,000 filas de test tienen un gemelo en train en
+  las variables candidatas del modelo (y 42 filas de train tienen un gemelo en test). Forzar que
+  queden del mismo lado supondría que son el mismo cliente, cosa que el archivo no permite afirmar
+  (ADR-008). Se reporta el conteo.
+- **Acceso al test.** El código de las fases siguientes usa `load_train()` para todo. `load_test()`
+  se reserva para la evaluación final de un modelo terminado: una vez por modelo, sin cambiar nada
+  después por lo que muestre.
+
+Limitación: train y test vienen del mismo período (abril a septiembre de 2005, resultado en
+octubre), así que el test mide el desempeño dentro de la misma foto y no hacia el futuro. No
+sustituye a una validación fuera de tiempo, que estos datos no permiten (ADR-003).
