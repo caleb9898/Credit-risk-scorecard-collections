@@ -349,7 +349,7 @@ Decisiones tomadas antes de ajustar:
   Los puntos de operación en test son los umbrales de PD fijados en train (la tasa de default, 0.5
   y los umbrales que marcaron el 10%, 20% y 30% en validación cruzada) más la captura al marcar el
   10%, 20% o 30% de las cuentas de test con mayor PD, que es una regla de capacidad. El resultado
-  se guardará en `reports/metrics/pd_logistic_test.json`.
+  se guarda en `reports/metrics/pd_logistic_test.json`.
 
 Resultados en train:
 - **Campeón: 5 variables**, todas con signo negativo y p-valor menor que 0.01: `N_DELAY_MONTHS`,
@@ -370,13 +370,23 @@ Resultados en train:
   entre las de riesgo bajo y medio. No se cambia el modelo por ello.
 - **Modelo de sensibilidad:** AUC fuera de fold 0.761 (IC 95% 0.753 a 0.768), y sí ordena todos sus
   deciles. Si el estado de septiembre fuera legítimo, esa diferencia sería lo que cuesta excluirlo;
-  si no lo es, no es un costo. El intervalo pareado de la diferencia se calculará en test.
+  si no lo es, no es un costo. El intervalo pareado de la diferencia está en los resultados en test.
 - **Selección entre folds:** en el campeón, `LIMIT_BAL` y `PAY_RATIO_MEAN` entran en los 15 folds y
   `N_DELAY_MONTHS` y `PAY_RATIO_1` en 14; `PAY_RATIO_2` a `PAY_RATIO_5` se reemplazan entre sí. La
   lista exacta de variables no es única, aunque el desempeño sí es estable.
 
+Resultados en test (una sola evaluación, `reports/metrics/pd_logistic_test.json`):
+- **Campeón:** AUC 0.719 (IC 95% 0.703 a 0.736), KS 0.359, PR-AUC 0.474; sin las 43 filas con
+  gemelo en train, AUC 0.721. Coincide con la validación cruzada (0.718), que por tanto no resultó
+  optimista. PD media 21.8% frente a 22.1% observada; calibración global 0.024 y pendiente 1.037.
+  También en test la tasa observada no crece de forma ordenada en los deciles bajos y medios.
+- **Modelo de sensibilidad:** AUC 0.764 (0.748 a 0.779). Diferencia con el campeón 0.044 (IC 95%
+  pareado 0.035 a 0.054; 0.043 sin gemelos).
+- **Nada se cambia por estos resultados:** el campeón sigue siendo el modelo sin el estado de
+  septiembre (ADR-009).
+
 Limitaciones: una sola foto temporal (ADR-003); los folds ya se usaron en la Fase 4, con un efecto no
-cuantificado; 140 filas de train con gemelo pueden caer en folds distintos (ADR-010); los errores
+cuantificado en validación cruzada (en test no se observó optimismo); 140 filas de train con gemelo pueden caer en folds distintos (ADR-010); los errores
 estándar de los coeficientes no consideran que las variables y los bins se eligieron con los mismos
 datos, y son algo optimistas; la calibración depende de la tasa de default de este archivo, que no
 se puede leer como la de la cartera del banco (`docs/DATA.md`); las fechas de registro de las
