@@ -312,3 +312,53 @@ Limitaciones:
 - La única variable de tendencia (utilización de septiembre menos la de abril) resultó inútil (IV
   0.002); no se probaron tendencias del ratio de pago ni de la mora.
 - `LIMIT_BAL` no tiene fecha y un banco puede ajustarlo según el comportamiento (ADR-009).
+
+## ADR-012 — Especificación, selección y validación del modelo de PD — *Aceptada*
+Contexto: la Fase 5 ajusta la regresión logística sobre las variables WOE de ADR-011 y mide su
+discriminación y su calibración. Las cifras de entrenamiento están en
+`reports/metrics/pd_logistic_cv.json` y el análisis en `notebooks/03_pd_model_logistic.ipynb`.
+
+Decisiones tomadas antes de ajustar:
+- **Validación cruzada de todo el procedimiento.** El binning, la preselección, la selección de
+  variables y la logística forman una sola cadena (`creditrisk.models.pipeline.WoeLogitModel`), que
+  se vuelve a ajustar dentro de cada uno de los 15 folds de ADR-010 y se mide en las filas que ese
+  fold no vio. Un test comprueba que ningún ajuste ve las filas de validación de su fold. El modelo
+  final se ajusta después con todo train.
+- **Selección dentro de la logística.** Con WOE = ln(no-defaults / defaults), todo coeficiente de un
+  modelo de PD debe ser negativo. Se quita primero, de a una, cualquier variable con signo positivo
+  (la de mayor p-valor entre ellas) y luego, de a una, la de mayor p-valor si supera 0.05.
+- **Sin regularización ni recalibración.** Máxima verosimilitud simple con statsmodels, que da
+  errores estándar e intervalos de confianza interpretables. La calibración se reporta tal como sale.
+- **Medición.** AUC, Gini, KS y PR-AUC sobre las predicciones fuera de fold, con intervalo bootstrap
+  estratificado de 1,000 remuestreos (primera repetición), más el AUC de cada repetición y el rango
+  entre folds. Calibración: Brier, intercepto, pendiente y tabla por decil. Puntos de operación:
+  marcar el 10%, 20% o 30% de mayor PD, o todo lo que supere la tasa de default de train o 0.5.
+- **Modelo de sensibilidad (ADR-009).** El mismo procedimiento con `STATUS_SEP` agregado a las
+  candidatas dentro de cada fold, no a una lista fija.
+- **Mismos folds que la Fase 4.** Esos folds ya sirvieron para excluir `AGE` y `EDUCATION`
+  (ADR-011); se mantienen para tener un solo esquema y se declara como limitación.
+- **Uso del test.** Una sola evaluación, con los dos modelos congelados, sobre las 6,000 filas y
+  sobre las que no tienen gemelo en train (ADR-010), con la diferencia de AUC entre ambos modelos
+  por bootstrap pareado. Solo `creditrisk.models.final_evaluation` puede cargar el test, y lo guarda
+  en `reports/metrics/pd_logistic_test.json`.
+
+Resultados en train:
+- **Campeón: 5 variables**, todas con signo negativo y p-valor menor que 0.01: `N_DELAY_MONTHS`,
+  `PAY_RATIO_1`, `PAY_RATIO_MEAN`, `LIMIT_BAL` y `PAY_RATIO_4`. Las variables de utilización salen
+  por signo incorrecto: una vez que el modelo conoce el límite y el pago, su relación con el default
+  se invierte, así que no aportan nada defendible.
+- **Discriminación fuera de fold del campeón:** AUC 0.718 (IC 95% 0.710 a 0.726), KS 0.341,
+  PR-AUC 0.459; el AUC por fold va de 0.707 a 0.738 y en el propio train es 0.720, así que no hay
+  señales de sobreajuste.
+- **Calibración del campeón:** pendiente 0.986 e intercepto −0.017; la PD media predicha coincide
+  con la tasa observada.
+- **Modelo de sensibilidad:** AUC fuera de fold 0.761 (IC 95% 0.753 a 0.769). Esa diferencia es lo
+  que cuesta excluir el estado de septiembre por la duda de fuga.
+- **Selección entre folds:** `N_DELAY_MONTHS`, `LIMIT_BAL` y `PAY_RATIO_MEAN` entran en 14 o 15 de
+  los 15 folds; los ratios de pago mensuales se reemplazan entre sí. La lista exacta de variables no
+  es única, aunque el desempeño sí es estable.
+
+Limitaciones: una sola foto temporal (ADR-003); folds ya usados en la Fase 4; 140 filas de train con
+gemelo pueden caer en folds distintos (ADR-010); la calibración depende de la tasa de default de
+este archivo, que no representa una cartera real; las fechas de registro de las variables son un
+SUPUESTO (ADR-009).
