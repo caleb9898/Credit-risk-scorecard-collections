@@ -10,9 +10,10 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import numpy as np
+import pandas as pd
 import statsmodels.api as sm
 from scipy import stats
-from sklearn.metrics import brier_score_loss, roc_auc_score
+from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
 
 ArrayLike = np.ndarray | list | tuple
 
@@ -40,6 +41,15 @@ def auc(y_true: ArrayLike, y_score: ArrayLike) -> float:
 def gini(y_true: ArrayLike, y_score: ArrayLike) -> float:
     """Gini coefficient (accuracy ratio) = 2 * AUC - 1."""
     return 2.0 * auc(y_true, y_score) - 1.0
+
+
+def pr_auc(y_true: ArrayLike, y_score: ArrayLike) -> float:
+    """Area under the precision-recall curve (average precision).
+
+    A score with no information gets about the event rate (0.22 here), not 0.5.
+    """
+    y, s = _prepare(y_true, y_score)
+    return float(average_precision_score(y, s))
 
 
 def ks_statistic(y_true: ArrayLike, y_score: ArrayLike) -> float:
@@ -147,5 +157,55 @@ def bootstrap_ci(
             ]
         )
         draws[b] = metric(y[idx], s[idx])
+    lo, hi = np.quantile(draws, [alpha / 2, 1 - alpha / 2])
+    return point, float(lo), float(hi)
+
+
+def calibration_table(y_true: ArrayLike, p_pred: ArrayLike, n_groups: int = 10) -> pd.DataFrame:
+    """Mean predicted PD and observed default rate in groups of equal size, by predicted PD.
+
+    Rows are sorted by prediction (ties broken by position) and cut into ``n_groups`` groups, so
+    every group has the same number of rows up to one. This is the table behind a reliability plot.
+    """
+    y, p = _prepare(y_true, p_pred)
+    order = pd.Series(p).rank(method="first")
+    group = pd.qcut(order, n_groups, labels=False) + 1
+    data = pd.DataFrame({"group": group, "y": y, "p": p})
+    table = data.groupby("group").agg(
+        n=("y", "size"), mean_pd=("p", "mean"), default_rate=("y", "mean")
+    )
+    return table.reset_index()
+
+
+def paired_bootstrap_diff(
+    metric: Callable[[np.ndarray, np.ndarray], float],
+    y_true: ArrayLike,
+    score_a: ArrayLike,
+    score_b: ArrayLike,
+    n_boot: int = 1000,
+    alpha: float = 0.05,
+    seed: int = 0,
+) -> tuple[float, float, float]:
+    """Difference metric(a) - metric(b) on the same rows, with a paired bootstrap CI.
+
+    Both scores are recomputed on the same resampled rows in every replicate, so the interval
+    reflects the difference itself and not the uncertainty of each metric separately. Resampling
+    is stratified by class, as in ``bootstrap_ci``. Returns (difference, lower, upper).
+    """
+    y, a = _prepare(y_true, score_a)
+    _, b = _prepare(y_true, score_b)
+    rng = np.random.default_rng(seed)
+    idx_pos = np.flatnonzero(y == 1)
+    idx_neg = np.flatnonzero(y == 0)
+    point = float(metric(y, a) - metric(y, b))
+    draws = np.empty(n_boot)
+    for i in range(n_boot):
+        idx = np.concatenate(
+            [
+                rng.choice(idx_pos, size=idx_pos.size, replace=True),
+                rng.choice(idx_neg, size=idx_neg.size, replace=True),
+            ]
+        )
+        draws[i] = metric(y[idx], a[idx]) - metric(y[idx], b[idx])
     lo, hi = np.quantile(draws, [alpha / 2, 1 - alpha / 2])
     return point, float(lo), float(hi)
