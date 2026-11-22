@@ -1,31 +1,32 @@
-# Credit Risk Scorecard & Collections Strategy
+# Scorecard de riesgo crediticio y estrategia de cobranza
 
-> Status: **under construction.** This README is written in the final phase, and every number in it
-> will come from `reports/metrics/*.json`. Scope and plan: [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md).
+> Estado: **en construcción.** Este README se escribe en la fase final, y cada número que aparezca
+> en él saldrá de `reports/metrics/*.json`. Alcance y plan: [`docs/PROJECT_SPEC.md`](docs/PROJECT_SPEC.md).
 
-## What this project is
-An end-to-end retail credit-risk workflow on the UCI *Default of Credit Card Clients* dataset:
-PD scorecard (WOE/IV + logistic regression) with a gradient-boosting challenger, expected-loss
-framework with explicit assumptions, interpretability, stability monitoring, fairness audit, and a
-collections roll-rate and prioritisation layer built from the observed monthly delinquency history.
+## Qué es este proyecto
+Un flujo completo de riesgo crediticio minorista sobre el dataset de UCI *Default of Credit Card
+Clients*: scorecard de PD (WOE/IV + regresión logística) con un modelo retador de gradient boosting,
+marco de pérdida esperada con supuestos explícitos, interpretabilidad, monitoreo de estabilidad,
+auditoría de equidad y una capa de cobranza con roll rates y priorización, construida a partir del
+historial mensual de mora observado.
 
-## What it is not
-A production model. The dataset has no origination dates, no recoveries and no rejected applicants,
-so out-of-time validation, fitted LGD and reject inference are out of scope. See
-[`docs/DATA.md`](docs/DATA.md).
+## Qué no es
+Un modelo de producción. El dataset no tiene fechas de originación, recuperaciones ni solicitantes
+rechazados, así que la validación fuera de tiempo, una LGD estimada y la inferencia de rechazados
+quedan fuera del alcance. Ver [`docs/DATA.md`](docs/DATA.md).
 
-## Reproduce
+## Cómo reproducirlo
 ```bash
 make install
-make data-check FILE="<raw file name>"
+make data-check FILE="<nombre del archivo crudo>"
 make check
 make notebooks
 ```
 
-## Data citation
+## Cita de los datos
 Yeh, I. C., & Lien, C. H. (2009). The comparisons of data mining techniques for the predictive
 accuracy of probability of default of credit card clients. *Expert Systems with Applications*,
 36(2), 2473–2480.
 
-## Author
-Caleb Samaniego Granados — Lima, Peru.
+## Autor
+Caleb Samaniego Granados — Lima, Perú.

@@ -28,6 +28,23 @@ DEMOGRAPHIC_COLS = ["LIMIT_BAL", "SEX", "EDUCATION", "MARRIAGE", "AGE"]
 TARGET = "DEFAULT"
 CANONICAL_COLUMNS = DEMOGRAPHIC_COLS + PAY_COLS + BILL_COLS + PAYAMT_COLS + [TARGET]
 
+# Calendar month (2005) behind each month index, for tables and figures. The labels are in
+# Spanish because everything the project shows to a reader is written in Spanish.
+MONTH_LABELS = {1: "Sep", 2: "Ago", 3: "Jul", 4: "Jun", 5: "May", 6: "Abr"}
+
+# Sensitive attributes are never model inputs (ADR-002); every other non-target column is a
+# candidate feature.
+SENSITIVE_COLS = ["SEX", "MARRIAGE"]
+CANDIDATE_FEATURE_COLS = [c for c in CANONICAL_COLUMNS if c not in SENSITIVE_COLS + [TARGET]]
+
+# Values described in the dataset documentation. Anything else is an undocumented code.
+DOCUMENTED_CODES: dict[str, set[int]] = {
+    "SEX": {1, 2},
+    "EDUCATION": {1, 2, 3, 4},
+    "MARRIAGE": {1, 2, 3},
+    "PAY": {-1, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+}
+
 # UCI layout: X1..X5 demographics, X6..X11 PAY, X12..X17 BILL_AMT, X18..X23 PAY_AMT, Y target.
 _UCI_RENAMES = {
     "X1": "LIMIT_BAL",
@@ -49,8 +66,9 @@ _NAMED_RENAMES = {
     "default_payment_next_month": TARGET,
 }
 
-# Expected size and event count per the dataset documentation. A mismatch means a different
-# file or a corrupted copy: investigate, never silently adjust.
+# Size and event count of the file this project is built on (30,000 rows is also the size
+# given by the dataset documentation). A mismatch means a different file or a corrupted copy:
+# investigate, never silently adjust.
 EXPECTED_N_ROWS = 30_000
 EXPECTED_DEFAULT_COUNT = 6_636
 

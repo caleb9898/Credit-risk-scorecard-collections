@@ -1,108 +1,126 @@
-# Project specification
+# Especificación del proyecto
 
-## Objective
-Build a bank-credible, end-to-end retail credit-risk workflow that a credit-risk professional could
-audit and recognise as representative of real work, and that doubles as a base for fraud/pricing-style
-projects later. Anchor: collections and credit risk.
+## Objetivo
+Construir un flujo completo de riesgo crediticio minorista, creíble para un banco, que un profesional
+de riesgo pueda auditar y reconocer como representativo del trabajo real, y que sirva después como
+base para proyectos de fraude o pricing. Eje: cobranza y riesgo crediticio.
 
-## Scope (v1)
-Included: PD scorecard (WOE/IV + logistic regression), challenger (LightGBM), scorecard scaling,
-EL framework with explicit assumptions, SHAP + reason codes, stability monitoring, fairness audit,
-collections roll-rate and prioritisation layer, business-impact analysis, Streamlit app, PySpark stage,
-documentation.
-Excluded from v1: reject inference, fitted LGD, true out-of-time validation, real-time serving,
-MLOps beyond reproducibility. (Each is listed in the README as a limitation.)
+## Alcance (v1)
+Incluido: scorecard de PD (WOE/IV + regresión logística), modelo retador (LightGBM), escalamiento
+del scorecard, marco de pérdida esperada (EL) con supuestos explícitos, SHAP y códigos de razón,
+monitoreo de estabilidad, auditoría de equidad, capa de cobranza con roll rates y priorización,
+análisis de impacto de negocio, app en Streamlit, etapa en PySpark y documentación.
+Excluido de la v1: inferencia de rechazados, LGD estimada, validación fuera de tiempo genuina,
+servicio en tiempo real y MLOps más allá de la reproducibilidad. (Cada punto aparece en el README
+como limitación.)
 
 ## Dataset
-UCI Default of Credit Card Clients (ADR-001). Details and quirks: `docs/DATA.md`.
+UCI Default of Credit Card Clients (ADR-001). Detalles y particularidades: `docs/DATA.md`.
 
-## Phases
-Each phase ends with: green `make check`, a review against `docs/RIGOR_STANDARDS.md`, and
-`docs/DECISIONS.md` updated. Metrics are saved to `reports/metrics/`.
+## Fases
+Cada fase termina con: `make check` en verde, una revisión contra `docs/RIGOR_STANDARDS.md` y
+`docs/DECISIONS.md` actualizado. Las métricas se guardan en `reports/metrics/`.
 
-### P1 — Environment and data foundation
-Deliver: raw file in `data/raw/`, hash recorded, `make data-check` passes, CI green, README stub.
-Accept: a clean clone installs and passes `make check`; `docs/DATA.md` table filled.
+### P1 — Entorno y base de datos
+Entregables: archivo crudo en `data/raw/`, hash registrado, `make data-check` pasa, CI en verde,
+README inicial.
+Aceptación: un clon limpio se instala y pasa `make check`; tabla de `docs/DATA.md` completa.
 
-### P2 — Data quality and EDA (`notebooks/01_eda.ipynb`)
-Deliver: target rate, missingness, outliers, undocumented codes, negative balances, duplicates,
-payment-timing check; `reports/metrics/data_quality.json`.
-Accept: every anomaly has a recorded decision; features available at prediction time identified.
+### P2 — Calidad de datos y EDA (`notebooks/01_eda.ipynb`)
+Entregables: tasa del target, valores faltantes, valores extremos, códigos no documentados, saldos
+negativos, duplicados, verificación del timing de pagos; `reports/metrics/data_quality.json`.
+Aceptación: cada anomalía tiene una decisión registrada; variables disponibles al momento de
+predecir identificadas.
 
-### P3 — Target, split, CV design
-Deliver: stratified 80/20 hold-out by saved index, repeated stratified CV on train (ADR-003).
-Accept: split reproducible; prevalence comparable; a test proves no index overlap; limitation stated.
+### P3 — Target, partición y diseño de validación cruzada
+Entregables: hold-out estratificado 80/20 guardado por índice, validación cruzada estratificada
+repetida sobre train (ADR-003).
+Aceptación: partición reproducible; prevalencia comparable; un test prueba que no hay índices
+repetidos entre train y test; limitación declarada.
 
-### P4 — Feature engineering and WOE/IV (`02_woe_iv_binning.ipynb`)
-Deliver: engineered features (e.g. utilisation, payment ratios, delinquency counts and severity, trends)
-with a rationale each; monotonic WOE binning; IV table; correlation/VIF; WOE stability across folds.
-Accept: binning fitted on train only; IV cross-checked by an independent implementation in tests;
-features with IV > 0.5 investigated for leakage.
+### P4 — Ingeniería de variables y WOE/IV (`02_woe_iv_binning.ipynb`)
+Entregables: variables construidas (por ejemplo utilización, ratios de pago, conteos y severidad de
+mora, tendencias), cada una con su justificación; binning WOE monótono; tabla de IV;
+correlación/VIF; estabilidad del WOE entre folds.
+Aceptación: binning ajustado solo sobre train; IV verificado en los tests con una implementación
+independiente; variables con IV > 0.5 investigadas por posible fuga de información.
 
-### P5 — PD model: logistic regression (`03_pd_model_logistic.ipynb`)
-Deliver: statsmodels fit with SE/p-values/CIs; sign review; AUC/Gini/KS/PR-AUC with bootstrap CIs on
-CV and on test (once); calibration summary and reliability plot; operating-point table.
-Accept: signs explained; calibration reported honestly; metrics saved to JSON.
+### P5 — Modelo de PD: regresión logística (`03_pd_model_logistic.ipynb`)
+Entregables: ajuste con statsmodels con errores estándar, p-valores e intervalos de confianza;
+revisión de signos; AUC/Gini/KS/PR-AUC con intervalos bootstrap en validación cruzada y en test
+(una sola vez); resumen de calibración y gráfico de confiabilidad; tabla de puntos de operación.
+Aceptación: signos explicados; calibración reportada con honestidad; métricas guardadas en JSON.
 
-### P6 — Challenger: LightGBM (`04_model_comparison_gbm.ipynb`)
-Deliver: CV-tuned LightGBM (documented search); paired bootstrap comparison with the champion;
-discussion of performance vs interpretability and regulatory acceptability.
-Accept: champion choice justified on stated criteria; no tuning on test.
+### P6 — Retador: LightGBM (`04_model_comparison_gbm.ipynb`)
+Entregables: LightGBM ajustado por validación cruzada (búsqueda documentada); comparación bootstrap
+pareada con el campeón; discusión de desempeño frente a interpretabilidad y aceptabilidad
+regulatoria.
+Aceptación: elección del campeón justificada con criterios declarados; ningún ajuste sobre test.
 
 ### P7 — Scorecard (`05_scorecard_scaling.ipynb`)
-Deliver: base score / base odds / PDO parameters; points table per bin; score bands with PD,
-volume and rank-ordering check; `artifacts/final/scorecard_points.csv`.
-Accept: a test shows points reproduce the logistic PD exactly (within numerical tolerance); bands monotonic.
+Entregables: parámetros de puntaje base, odds base y PDO; tabla de puntos por bin; bandas de puntaje
+con PD, volumen y verificación de ordenamiento; `artifacts/final/scorecard_points.csv`.
+Aceptación: un test muestra que los puntos reproducen exactamente la PD de la logística (dentro de
+la tolerancia numérica); bandas monótonas.
 
-### P8 — EAD, LGD and expected loss (`07_ead_lgd_expected_loss.ipynb`)
-Deliver: EAD proxy and LGD scenarios (ADR-004); EL at account, band and portfolio level; sensitivity
-heatmaps over CCF × LGD; plain-language statement of what is assumed.
-Accept: every EL figure shows its assumptions; nothing labelled "estimated" that is assumed.
+### P8 — EAD, LGD y pérdida esperada (`07_ead_lgd_expected_loss.ipynb`)
+Entregables: proxy de EAD y escenarios de LGD (ADR-004); EL a nivel de cuenta, banda y cartera;
+mapas de sensibilidad sobre CCF × LGD; declaración en lenguaje llano de lo que se supone.
+Aceptación: cada cifra de EL muestra sus supuestos; nada supuesto se etiqueta como "estimado".
 
-### P9 — Interpretability (`06_shap_interpretability.ipynb`)
-Deliver: SHAP (global/local) for the challenger; scorecard point contributions and reason codes for the
-champion; agreement analysis with IV ranking.
-Accept: consistency check by code between additive contributions and model output; 2–3 worked examples.
+### P9 — Interpretabilidad (`06_shap_interpretability.ipynb`)
+Entregables: SHAP (global y local) para el retador; contribuciones en puntos del scorecard y códigos
+de razón para el campeón; análisis de concordancia con el ranking de IV.
+Aceptación: verificación por código de la consistencia entre las contribuciones aditivas y la
+salida del modelo; 2–3 ejemplos desarrollados.
 
-### P10 — Collections roll-rate and prioritisation (`08_rollrate_collections_strategy.ipynb`)
-Deliver: delinquency-bucket mapping from `PAY_*` codes (assumptions stated); monthly transition
-matrices PAY_{k+1} → PAY_k with bootstrap CIs; cure/roll rates; predictive power of current bucket vs
-PD score for next-month default; **capture-rate curves** at limited contact capacity (empirical);
-treatment-segmentation matrix (score band × bucket); simulated treatment impact with sensitivity over
-cure-uplift and cost assumptions (labelled SIMULATION / ASSUMPTION).
-Accept: empirical and simulated parts are visibly separate in notebook, figures and README.
+### P10 — Roll rates de cobranza y priorización (`08_rollrate_collections_strategy.ipynb`)
+Entregables: mapeo de los códigos `PAY_*` a tramos de mora (supuestos declarados); matrices de
+transición mensuales PAY_{k+1} → PAY_k con intervalos bootstrap; tasas de cura y de deterioro; poder
+predictivo del tramo actual frente al score de PD para el default del mes siguiente; **curvas de
+captura** con capacidad de contacto limitada (empíricas); matriz de segmentación de tratamiento
+(banda de score × tramo); impacto simulado del tratamiento con sensibilidad sobre los supuestos de
+mejora en la cura y de costos (etiquetado SIMULACIÓN / SUPUESTO).
+Aceptación: las partes empíricas y simuladas están visiblemente separadas en el notebook, las
+figuras y el README.
 
-### P11 — Stability and stress (`09_psi_monitoring.ipynb`, `10_stress_test.ipynb`)
-Deliver: PSI/CSI train vs test (sanity); declared drift scenarios and their effect on PSI and
-performance (ADR-003); PD-shift stress scenarios and EL impact; monitoring policy with triggers.
-Accept: all drift is labelled as simulated; thresholds and actions documented.
+### P11 — Estabilidad y estrés (`09_psi_monitoring.ipynb`, `10_stress_test.ipynb`)
+Entregables: PSI/CSI de train frente a test (control de cordura); escenarios de deriva declarados y
+su efecto en el PSI y el desempeño (ADR-003); escenarios de estrés con desplazamiento de PD e impacto
+en EL; política de monitoreo con disparadores.
+Aceptación: toda deriva está etiquetada como simulada; umbrales y acciones documentados.
 
-### P12 — Fairness and governance
-Deliver: audit by SEX, AGE band, EDUCATION; draft `reports/model_card.md` (intended use, data, metrics,
-limits, monitoring, owner).
-Accept: findings reported with caveats; no compliance claims.
+### P12 — Equidad y gobierno
+Entregables: auditoría por SEX, tramo de AGE y EDUCATION; borrador de `reports/model_card.md` (uso
+previsto, datos, métricas, límites, monitoreo, responsable).
+Aceptación: hallazgos reportados con sus salvedades; ninguna afirmación de cumplimiento normativo.
 
-### P13 — Business impact (`11_business_impact.ipynb`)
-Deliver: cut-off policy from cost-ratio grid; recall-oriented operating point; EL and default-rate
-effect of the policy; 1–2 figures readable by a non-technical audience.
-Accept: cost assumptions explicit; trade-off curves shown, not a single cherry-picked point.
+### P13 — Impacto de negocio (`11_business_impact.ipynb`)
+Entregables: política de punto de corte a partir de una grilla de ratios de costo; punto de
+operación orientado a recall; efecto de la política en EL y en la tasa de default; 1–2 figuras
+legibles para una audiencia no técnica.
+Aceptación: supuestos de costo explícitos; se muestran curvas de compensación, no un único punto
+elegido a conveniencia.
 
-### P14 — Streamlit app
-Deliver: app reading `artifacts/final/`, inputs for a hypothetical client → PD, score, band, reason
-codes; disclaimer that it is a methodology demo; app test.
-Accept: runs from a clean clone; no hidden state; deployable on Streamlit Community Cloud.
+### P14 — App en Streamlit
+Entregables: app que lee `artifacts/final/`, con entradas para un cliente hipotético → PD, puntaje,
+banda y códigos de razón; aviso de que es una demostración metodológica; test de la app.
+Aceptación: corre desde un clon limpio; sin estado oculto; desplegable en Streamlit Community Cloud.
 
-### P15 — PySpark stage (local mode)
-Deliver: PySpark implementation of the feature pipeline in `src/creditrisk/spark/` with a parity test
-against the pandas implementation, run with a local Spark session (ADR-006); notes on what would
-change at scale; run log saved in `docs/evidence/`.
-Accept: parity test passes; evidence file present; README states that Spark ran in local mode.
+### P15 — Etapa en PySpark (modo local)
+Entregables: implementación en PySpark del pipeline de variables en `src/creditrisk/spark/` con un
+test de paridad contra la implementación en pandas, ejecutada con una sesión local de Spark
+(ADR-006); notas sobre lo que cambiaría a escala; registro de ejecución guardado en `docs/evidence/`.
+Aceptación: el test de paridad pasa; el archivo de evidencia existe; el README indica que Spark
+corrió en modo local.
 
-### P16 — Documentation and release
-Deliver: README (problem, data, method, results from JSON, differentiator, limitations, how to
-reproduce), `docs/methodology.md`, final model card, `make notebooks` green, release tag `v1.0`.
-Accept: every claim in the README traces to a saved metric; a stranger can reproduce results from
-the README.
+### P16 — Documentación y publicación
+Entregables: README (problema, datos, método, resultados desde los JSON, diferenciador, limitaciones,
+cómo reproducir), `docs/methodology.md`, model card final, `make notebooks` en verde, etiqueta de
+versión `v1.0`.
+Aceptación: cada afirmación del README se rastrea hasta una métrica guardada; un desconocido puede
+reproducir los resultados a partir del README.
 
-## Later (not v1)
-Fraud satellite (IEEE-CIS or ULB) and pricing satellite (freMTPL), reusing `creditrisk.validation`.
+## Más adelante (fuera de la v1)
+Satélite de fraude (IEEE-CIS o ULB) y satélite de pricing (freMTPL), reutilizando
+`creditrisk.validation`.
