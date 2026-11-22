@@ -77,6 +77,17 @@ def test_cross_validation_predicts_every_row_once_per_repeat():
     assert cv["selection_counts"].max() <= 8
 
 
+def test_out_of_fold_predictions_land_on_the_right_rows():
+    # Refit the first fold by hand: its predictions must sit on exactly those rows of the oof.
+    X, y = _data()
+    folds = _folds(len(X), k=4, repeats=1)
+    cv = pl.cross_validate(SPECS, X, y, folds, n_folds=4)
+    fit_rows, valid_rows = folds[0]
+    model = pl.WoeLogitModel(SPECS).fit(X.iloc[fit_rows], y.iloc[fit_rows])
+    expected = model.predict_pd(X.iloc[valid_rows])
+    assert np.allclose(cv["oof"].loc[expected.index, 1], expected)
+
+
 def test_cross_validation_never_fits_on_validation_rows(monkeypatch):
     # Spy on every binning fit: in each fold it must see only that fold's fitting rows.
     seen = []

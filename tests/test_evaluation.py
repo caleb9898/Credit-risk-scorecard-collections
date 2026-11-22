@@ -28,7 +28,12 @@ def test_evaluate_predictions_reports_every_metric_with_an_interval():
     out = ev.evaluate_predictions(y, p, n_boot=100, seed=1)
     for name in ["auc", "gini", "ks", "pr_auc"]:
         assert out[name]["low"] <= out[name]["estimate"] <= out[name]["high"], name
-    assert set(out["calibration"]) == {"brier", "calibration_intercept", "calibration_slope"}
+    assert set(out["calibration"]) == {
+        "brier",
+        "calibration_in_the_large",
+        "calibration_intercept",
+        "calibration_slope",
+    }
     assert len(out["calibration_by_decile"]) == 10
     assert out["n_rows"] == 3000
     assert out["n_defaults"] == int(y.sum())

@@ -49,6 +49,18 @@ def test_only_listed_files_read_the_split_or_the_raw_file_directly():
     assert _files_using("load_raw") <= allowed
 
 
+# Files allowed to run the one-time evaluation of the frozen models on the test set.
+MAY_RUN_FINAL_EVALUATION = {
+    "src/creditrisk/models/final_evaluation.py",
+    "notebooks/03_pd_model_logistic.ipynb",
+}
+
+
+def test_only_listed_files_run_the_final_evaluation():
+    assert _files_using("evaluate_on_test") <= MAY_RUN_FINAL_EVALUATION
+    assert _files_using("final_evaluation") <= MAY_RUN_FINAL_EVALUATION
+
+
 def test_only_listed_files_load_all_rows():
     assert _files_using("load_project_data") <= MAY_LOAD_ALL_ROWS
 

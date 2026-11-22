@@ -14,11 +14,12 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from creditrisk.config import load_config
 from creditrisk.data.schema import TARGET
 from creditrisk.data.split import make_cv
 from creditrisk.features.engineering import FEATURE_SPECS, build_features
 from creditrisk.features.selection import champion_specs
-from creditrisk.models.evaluation import evaluate_predictions
+from creditrisk.models.evaluation import _records, evaluate_predictions
 from creditrisk.models.logistic import coefficient_table
 from creditrisk.models.pipeline import WoeLogitModel, cross_validate
 from creditrisk.validation.metrics import auc
@@ -31,10 +32,6 @@ def model_specs() -> dict[str, dict[str, dict]]:
         "champion": champion,
         "sensitivity_with_status_sep": {**champion, "STATUS_SEP": FEATURE_SPECS["STATUS_SEP"]},
     }
-
-
-def _records(table: pd.DataFrame) -> list[dict]:
-    return table.astype(object).where(table.notna(), None).to_dict(orient="records")
 
 
 def _cv_summary(cv: dict, y: pd.Series, thresholds, n_boot: int, seed: int) -> dict:
@@ -55,15 +52,20 @@ def _cv_summary(cv: dict, y: pd.Series, thresholds, n_boot: int, seed: int) -> d
     }
 
 
-def train_report(train: pd.DataFrame, n_boot: int = 1000, seed: int = 0) -> tuple[dict, dict, dict]:
+def train_report(
+    train: pd.DataFrame, n_boot: int = 1000, seed: int | None = None
+) -> tuple[dict, dict, dict]:
     """Cross-validate and fit both models on ``train``.
 
     Returns the JSON-friendly report, the fitted final models (for the test evaluation) and the
-    out-of-fold PD of the first repeat of every model (for plots).
+    out-of-fold PD of the first repeat of every model (for plots). The bootstrap uses the
+    project seed unless ``seed`` is given.
     """
+    config = load_config("project")
+    seed = config["seed"] if seed is None else seed
     X, y = build_features(train), train[TARGET]
     folds = list(make_cv().split(np.zeros(len(y)), y))
-    n_folds = make_cv().cvargs["n_splits"]
+    n_folds = config["split"]["cv_folds"]
     train_rate = float(y.mean())
     thresholds = (train_rate, 0.5)
 
@@ -72,6 +74,7 @@ def train_report(train: pd.DataFrame, n_boot: int = 1000, seed: int = 0) -> tupl
         "train_default_rate": train_rate,
         "operating_thresholds": list(thresholds),
         "n_boot": n_boot,
+        "bootstrap_seed": seed,
         "models": {},
     }
     models = {}

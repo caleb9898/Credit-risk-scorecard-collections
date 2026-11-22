@@ -15,9 +15,16 @@ from statsmodels.discrete.discrete_model import BinaryResultsWrapper
 
 
 def fit_logit(X: pd.DataFrame, y) -> BinaryResultsWrapper:
-    """Unpenalised maximum-likelihood logistic regression with an intercept named ``const``."""
+    """Unpenalised maximum-likelihood logistic regression with an intercept named ``const``.
+
+    Raises RuntimeError if the optimiser did not converge, so that a bad fit inside a
+    cross-validation fold cannot go unnoticed.
+    """
     design = sm.add_constant(X, has_constant="add")
-    return sm.Logit(np.asarray(y), design).fit(disp=0)
+    result = sm.Logit(np.asarray(y), design).fit(disp=0)
+    if not result.mle_retvals["converged"]:
+        raise RuntimeError("The logistic regression did not converge")
+    return result
 
 
 def coefficient_table(result: BinaryResultsWrapper) -> pd.DataFrame:

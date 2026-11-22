@@ -37,6 +37,22 @@ def test_calibration_table_groups_by_predicted_pd():
     assert table["n"].sum() == 20
 
 
+def test_calibration_in_the_large_detects_a_constant_shift():
+    from creditrisk.validation.metrics import calibration_summary
+
+    rng = np.random.default_rng(0)
+    logit = rng.normal(-1.2, 1.0, size=50_000)
+    y = (rng.random(50_000) < 1 / (1 + np.exp(-logit))).astype(int)
+    calibrated = 1 / (1 + np.exp(-logit))
+    too_low = 1 / (1 + np.exp(-(logit - 0.5)))  # every log-odds 0.5 too low
+    assert calibration_summary(y, calibrated)["calibration_in_the_large"] == pytest.approx(
+        0, abs=0.03
+    )
+    assert calibration_summary(y, too_low)["calibration_in_the_large"] == pytest.approx(
+        0.5, abs=0.03
+    )
+
+
 def test_paired_bootstrap_of_identical_scores_is_zero():
     rng = np.random.default_rng(0)
     y = rng.binomial(1, 0.3, size=500)

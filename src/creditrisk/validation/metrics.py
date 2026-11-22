@@ -113,10 +113,14 @@ def confusion_at_threshold(
 
 
 def calibration_summary(y_true: ArrayLike, p_pred: ArrayLike) -> dict[str, float]:
-    """Brier score plus calibration intercept and slope.
+    """Brier score, calibration-in-the-large, and calibration intercept and slope.
 
-    Slope and intercept come from regressing the outcome on logit(p). A well-calibrated model has
-    slope ~1 and intercept ~0; slope < 1 signals over-confident predictions.
+    - ``calibration_slope`` and ``calibration_intercept`` come from regressing the outcome on
+      logit(p). A well-calibrated model has slope ~1 and intercept ~0; slope < 1 signals
+      over-confident predictions. This intercept is the correction at logit(p) = 0 (PD 0.5).
+    - ``calibration_in_the_large`` is the intercept of the same regression with the slope fixed
+      at 1 (logit(p) as an offset): it says whether the PDs are too high (< 0) or too low (> 0)
+      on average. Ideal value 0.
     """
     y, p = _prepare(y_true, p_pred)
     if p.min() < 0 or p.max() > 1:
@@ -124,8 +128,12 @@ def calibration_summary(y_true: ArrayLike, p_pred: ArrayLike) -> dict[str, float
     p_clipped = np.clip(p, 1e-6, 1 - 1e-6)
     logit = np.log(p_clipped / (1 - p_clipped))
     fit = sm.Logit(y, sm.add_constant(logit)).fit(disp=0)  # unpenalised maximum likelihood
+    in_the_large = sm.GLM(
+        y, np.ones((len(y), 1)), family=sm.families.Binomial(), offset=logit
+    ).fit()
     return {
         "brier": float(brier_score_loss(y, p)),
+        "calibration_in_the_large": float(in_the_large.params[0]),
         "calibration_intercept": float(fit.params[0]),
         "calibration_slope": float(fit.params[1]),
     }
