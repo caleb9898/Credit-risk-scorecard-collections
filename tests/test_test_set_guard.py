@@ -39,6 +39,13 @@ def _files_using(name):
 
 def test_only_listed_files_load_the_hold_out():
     assert _files_using("load_test") <= MAY_LOAD_TEST
+    assert _files_using("_load_part") <= MAY_LOAD_TEST
+
+
+def test_only_listed_files_read_the_split_or_the_raw_file_directly():
+    allowed = MAY_LOAD_ALL_ROWS | {"src/creditrisk/data/schema.py"}
+    assert _files_using("holdout_index") <= allowed
+    assert _files_using("load_raw") <= allowed
 
 
 def test_only_listed_files_load_all_rows():

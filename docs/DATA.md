@@ -29,7 +29,7 @@ en UCI (revisada en la fecha de descarga indicada abajo).
 | Columna | Significado |
 |---|---|
 | LIMIT_BAL | Límite de crédito (NT$), crédito individual más el suplementario familiar |
-| SEX, EDUCATION, MARRIAGE, AGE | Datos demográficos (SEX y MARRIAGE excluidos de los modelos, ADR-002) |
+| SEX, EDUCATION, MARRIAGE, AGE | Datos demográficos (SEX y MARRIAGE excluidos de los modelos, ADR-002; AGE y EDUCATION fuera del modelo campeón, ADR-011; las cuatro en la auditoría de equidad) |
 | PAY_1 … PAY_6 | Estado de pago, mes 1 = sep 2005 … mes 6 = abr 2005 |
 | BILL_AMT1 … BILL_AMT6 | Monto del estado de cuenta (NT$), misma indexación de meses |
 | PAY_AMT1 … PAY_AMT6 | Monto pagado en el mes (NT$), misma indexación de meses |
@@ -59,7 +59,7 @@ Encontradas en `notebooks/01_eda.ipynb`; los conteos están guardados en
 | `PAY_*` código 1 | 3,688 cuentas en `PAY_1`, como máximo 28 en cualquier mes anterior | Se conserva; `PAY_1` no es directamente comparable con `PAY_2`…`PAY_6` |
 | Códigos de atraso sin nada facturado | 1,689 cuentas en septiembre, de 22 a 125 en los meses anteriores | Se conservan; limitación para el análisis de roll rates |
 | `PAY_*` código 9 | Documentado pero nunca presente | Nada que hacer |
-| Momento de registro de `PAY_1` | No se puede demostrar que sea anterior al resultado de octubre | Variable candidata; su disponibilidad es un SUPUESTO con una verificación de fuga sobre datos de entrenamiento |
+| Momento de registro de `PAY_1` | No se puede demostrar que sea anterior al resultado de octubre; en train su IV es 0.873, por encima del umbral de alarma | Fuera del modelo campeón; solo en el modelo de sensibilidad (ADR-009) |
 | `BILL_AMT*` negativo | De 590 a 688 cuentas por mes (leído como saldo a favor) | Se conserva; se trunca a cero solo dentro de las fórmulas que lo necesitan |
 | `BILL_AMT*` mayor que `LIMIT_BAL` | De 798 a 2,115 cuentas por mes | Se conserva |
 | Cuentas inactivas | 795 cuentas con todas las facturas y pagos en cero | Se conservan en la población |
