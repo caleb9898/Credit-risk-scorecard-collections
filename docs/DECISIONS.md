@@ -162,6 +162,18 @@ nuevo en este registro antes de cerrar ningún modelo. Alternativa considerada: 
 y modelar solo con los meses 2–6. Rechazada porque descartaría el comportamiento más reciente sin
 evidencia de que haya fuga.
 
+**Actualización (Fase 4): la verificación dio la alarma y la decisión cambia.** En train, el estado
+de septiembre agrupado (`STATUS_SEP`) tiene un IV de 0.873, por encima del umbral de 0.5
+(`reports/metrics/woe_iv.json`). El IV del estado de pago crece con la cercanía al resultado (abril
+0.285, mayo 0.330, junio 0.353, julio 0.412, agosto 0.550), pero el salto de agosto a septiembre es
+mucho mayor que los anteriores. Puede ser solo recencia o puede ser información de octubre; el
+archivo no permite distinguirlo. Decisión: **el modelo campeón se construye sin `STATUS_SEP`**. El
+modelo con `STATUS_SEP` se ajusta solo como sensibilidad, para mostrar cuánto ganaría la predicción
+si el dato fuera legítimo, y se reporta como tal. Los montos de septiembre (`BILL_AMT1`, `PAY_AMT1`)
+se siguen usando: su timing quedó verificado en la Fase 2. Consecuencia: el desempeño del campeón
+será probablemente menor que el de los análisis públicos de este dataset, que suelen usar esta
+variable; se reporta tal como salga.
+
 ## ADR-010 — Mecánica de la partición hold-out y de la validación cruzada — *Aceptada*
 Contexto: ADR-003 fija el diseño (hold-out estratificado 80/20 y validación cruzada estratificada
 de 5 folds con 3 repeticiones). Faltaba decidir cómo se crea y se guarda la partición para que el
@@ -213,3 +225,60 @@ Limitación: train y test vienen del mismo período (abril a septiembre de 2005,
 octubre), así que el test mide el desempeño dentro de la misma foto y no hacia el futuro. No
 sustituye a una validación fuera de tiempo, que estos datos no permiten (ADR-003). Además, las 43
 filas de test con gemelo en train no son casos de prueba del todo independientes.
+
+## ADR-011 — Variables candidatas, binning WOE y preselección — *Aceptada*
+Contexto: la Fase 4 construye las variables, las agrupa en bins con WOE y decide cuáles pasan al
+modelo. Todo se calcula con la parte de entrenamiento (24,000 filas); las cifras están en
+`reports/metrics/woe_iv.json` y el análisis en `notebooks/02_woe_iv_binning.ipynb`.
+
+Decisiones tomadas antes de calcular:
+- **Variables.** 24 candidatas construidas fila por fila, sin ajustar nada a los datos
+  (`creditrisk.features.engineering`): límite, edad y educación; utilización por mes (la factura
+  negativa cuenta como cero), su media, su máximo y su tendencia; ratio de pago
+  `PAY_AMTk / BILL_AMT{k+1}` por mes y su media (vacío cuando no había nada que pagar); historial
+  de mora de agosto a abril (meses con atraso, peor atraso, meses desde el último atraso); estado de
+  septiembre y de agosto como categorías; e indicador de cuenta inactiva.
+- **El historial de mora usa solo agosto a abril**, los meses con codificación consistente
+  (ADR-008). Así la sensibilidad con y sin `STATUS_SEP` (ADR-009) quita toda la información de
+  septiembre y no deja parte escondida dentro de los conteos.
+- **Códigos de estado como categorías.** −2, −1 y 0 son categorías propias, no "cero meses de
+  atraso" (ADR-008). Los atrasos de 3 o más meses se agrupan en "3+": es una regla fija de negocio,
+  que no mira el target, y evita que un código casi vacío (el 8 tiene muy pocos casos) se una a una
+  categoría sin relación.
+- **Binning.** Cortes encontrados con `optbinning` (ADR-005); cada bin tiene al menos el 5% de las
+  filas; los valores vacíos van a un bin propio. Para las variables numéricas se declaró, según la
+  lógica de negocio, la dirección de la tasa de default: sube con la utilización y con la mora, baja
+  con el ratio de pago, el límite y los meses desde el último atraso; la edad va sin restricción.
+  La asignación a bins, el WOE y el IV se calculan en `creditrisk.features.woe`, y un test comprueba
+  que ese IV coincide con el de `optbinning` en los mismos bins.
+- **Preselección.** Se recorre la lista de mayor a menor IV y se conserva cada variable salvo que su
+  IV sea menor que 0.02 o que su WOE tenga una correlación mayor que 0.7 con una ya conservada. Un
+  VIF mayor que 5 se marca. La selección definitiva se hace en la Fase 5, reajustando binning y
+  selección dentro de cada fold, porque el IV calculado una vez sobre todo train es descriptivo.
+
+Resultados y decisiones tomadas con ellos a la vista:
+- **Cinco variables superan el IV de alarma de 0.5:** `STATUS_SEP` (0.873, ver ADR-009),
+  `N_DELAY_MONTHS` (0.641), `MONTHS_SINCE_DELAY` (0.630), `STATUS_AUG` (0.550) y `MAX_DELAY`
+  (0.531). Las cuatro últimas vienen de agosto a abril, meses anteriores a septiembre y con
+  codificación consistente, así que no pueden contener información de octubre; que el historial de
+  atrasos sea el predictor más fuerte es lo esperable en un scorecard de comportamiento. **Se
+  conservan.** Son estables fuera del fold: el IV de validación de `N_DELAY_MONTHS` va de 0.56 a
+  0.73 en los 15 folds y el orden de riesgo de sus bins se mantiene en todos.
+- **`AGE` y `EDUCATION` quedan fuera del modelo** (ADR-002). Su IV en train es 0.022 en ambos
+  casos, apenas sobre 0.02, y no son estables: `AGE` llega a un IV de 0.02 fuera del fold en 13 de
+  15 folds, pero el orden de riesgo de sus bins no se sostiene (correlación de rangos media 0.66 y
+  mínima 0.27); `EDUCATION` llega a 0.02 solo en 10 de 15 folds. El criterio de estabilidad (IV de
+  validación ≥ 0.02 en al menos 12 de 15 folds, con un orden de riesgo que se mantenga) se precisó
+  al ver estos primeros resultados de train; la decisión la tomó el responsable del proyecto con
+  ellos a la vista. Ambas variables se incluyen en la auditoría de equidad de la Fase 12.
+- **`INACTIVE` no aporta información:** las cuentas inactivas son menos del 5% de train, así que la
+  variable queda en un solo bin. Esas cuentas ya quedan identificadas por los bins de "nada que
+  pagar" de los ratios de pago.
+- **Lista preseleccionada (10 variables):** `N_DELAY_MONTHS`, `PAY_RATIO_1` a `PAY_RATIO_5`,
+  `PAY_RATIO_MEAN`, `LIMIT_BAL`, `UTIL_6` y `UTIL_2`. `N_DELAY_MONTHS` absorbe a las otras variables
+  de historial por su alta correlación. El VIF máximo entre ellas es 2.55. El modelo de sensibilidad
+  de ADR-009 usa estas diez más `STATUS_SEP`.
+
+Limitación: con muestras chicas el IV de validación tiende a inflarse, así que el conteo de folds
+con IV ≥ 0.02 es un criterio generoso; el orden de riesgo de los bins es la señal más confiable de
+estabilidad.
