@@ -177,6 +177,11 @@ Decisiones:
   si el archivo falta, da error en lugar de crear un test nuevo. Un test hace la misma comparación.
   Si esa comparación falla, el archivo guardado manda: se conserva y se investiga qué cambió
   (semilla, datos o versión de una librería).
+- **Versiones de librerías.** Cada archivo de métricas guarda, junto al commit, la semilla y el
+  hash de los datos, las versiones de Python y de las librerías que pueden cambiar un resultado
+  (numpy, pandas, scipy, scikit-learn, statsmodels, optbinning). Las dependencias solo fijan una
+  versión mínima; así, si un clon futuro obtiene otro número, se puede ver con qué versiones se
+  produjo el original.
 - **Las filas se identifican por su posición en el archivo crudo** (0 a 29,999). La columna `ID` se
   descarta al cargar (ADR-008), y la posición es estable porque el hash del archivo está fijado.
 - **Se estratifica solo por el target.** Train: 24,000 filas y 5,309 defaults; test: 6,000 filas y
@@ -196,6 +201,9 @@ Decisiones:
   dentro de train, que puede caer en otro fold. Forzar que queden del mismo lado supondría que son
   el mismo cliente, cosa que el archivo no permite afirmar (ADR-008). El efecto posible es que el
   test y la validación cruzada se vean ligeramente optimistas.
+- **Sensibilidad por gemelos, fijada antes de ver el test.** Cada evaluación final sobre el test se
+  reporta sobre las 6,000 filas y, como sensibilidad, sobre las 5,957 filas que no tienen un gemelo
+  en train. Se decide ahora para que no dependa de ningún resultado de test.
 - **Acceso al test.** El código de las fases siguientes debe usar `load_train()` para todo.
   `load_test()` se reserva para la evaluación final de un modelo terminado: una vez por modelo, sin
   cambiar nada después por lo que muestre. Un test revisa el código y los notebooks y falla si un
