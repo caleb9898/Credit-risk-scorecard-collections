@@ -80,3 +80,26 @@ def test_fold_stability_on_a_strong_signal():
     assert out.loc["x", "iv_valid_min"] > 0.3
     assert out.loc["noise", "iv_valid_mean"] < out.loc["noise", "iv_fit_mean"]  # optimism
     assert out.loc["noise", "woe_rank_corr_mean"] < out.loc["x", "woe_rank_corr_mean"]
+
+
+def test_fold_stability_chance_level():
+    rng = np.random.default_rng(0)
+    n = 3000
+    x = rng.normal(size=n)
+    y = pd.Series((rng.random(n) < 1 / (1 + np.exp(-(1.5 * x - 1)))).astype(int))
+    X = pd.DataFrame({"x": x, "noise": rng.normal(size=n)})
+    specs = {
+        "x": {"dtype": "numerical", "monotonic_trend": "ascending"},
+        "noise": {"dtype": "numerical", "monotonic_trend": None},
+    }
+    positions = np.arange(n)
+    folds = [
+        (np.flatnonzero(positions % 3 != k), np.flatnonzero(positions % 3 == k)) for k in range(3)
+    ]
+    out = dg.fold_stability(X, y, folds, specs, n_permutations=50, seed=1)
+    assert out.loc["x", "n_folds_iv_valid_above_null_p95"] == 3
+    assert out.loc["noise", "n_folds_iv_valid_above_null_p95"] <= 1
+    # Shuffling gives a positive IV (the small-sample bias), and the noise feature's own
+    # validation IV is of the same size: it is no better than chance.
+    assert out.loc["noise", "iv_null_mean"] > 0
+    assert out.loc["noise", "iv_valid_mean"] < 2 * out.loc["noise", "iv_null_mean"]

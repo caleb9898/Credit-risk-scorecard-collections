@@ -49,6 +49,24 @@ def test_woe_is_negative_for_the_riskier_bin():
     assert table.loc["high", "woe"] < 0 < table.loc["low", "woe"]
 
 
+def test_woe_table_smoothing_known_answer():
+    # Bin A: 0 defaults, 50 non-defaults; bin B: 25 and 25. With 0.5 added to every count:
+    # A: ln((50.5/76) / (0.5/26)), B: ln((25.5/76) / (25.5/26)), worked out by hand.
+    bins = np.array(["A"] * 50 + ["B"] * 50)
+    y = np.array([0] * 50 + [1] * 25 + [0] * 25)
+    table = woe.woe_table(bins, y, smoothing=0.5)
+    assert table.loc["A", "woe"] == pytest.approx(3.5425, abs=1e-4)
+    assert table.loc["B", "woe"] == pytest.approx(-1.0726, abs=1e-4)
+
+
+def test_fit_refuses_a_bin_with_an_infinite_woe():
+    X, y = _risk_data()
+    y = y.copy()
+    y[X["z"].isna().to_numpy()] = 1  # every missing value is a default
+    with pytest.raises(ValueError, match="infinite"):
+        woe.WoeBinner(SPECS).fit(X, y)
+
+
 def test_woe_table_smoothing_handles_a_bin_without_defaults():
     bins = np.array(["A"] * 50 + ["B"] * 50)
     y = np.array([0] * 50 + [1] * 25 + [0] * 25)

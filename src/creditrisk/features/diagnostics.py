@@ -11,7 +11,7 @@ import pandas as pd
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.tools import add_constant
 
-from creditrisk.features.woe import WoeBinner, woe_table
+from creditrisk.features.woe import WoeBinner, information_value, woe_table
 
 # Upper limit of each IV band; above the last one an IV is suspicious (check for leakage).
 IV_BANDS = [(0.02, "useless"), (0.1, "weak"), (0.3, "medium"), (0.5, "strong")]
@@ -85,6 +85,8 @@ def fold_stability(
     specs: dict[str, dict],
     min_bin_size: float = 0.05,
     min_iv: float = 0.02,
+    n_permutations: int = 0,
+    seed: int = 0,
 ) -> pd.DataFrame:
     """Refit the binning in every fold and check it on the rows left out of that fold.
 
@@ -98,7 +100,20 @@ def fold_stability(
       bins on the fitting rows and on the validation rows. 1 means the risk ordering of the bins
       learned in the fold holds on the rows it did not see. Missing when a fold has a single bin.
     - ``n_bins_min``, ``n_bins_max``: number of bins found across folds.
+
+    The validation IV is not compared like for like with the fitting IV: it is smoothed, and it
+    leaves out validation rows whose category was not seen when fitting. With small samples it is
+    also biased upwards, more so the more bins a feature has. ``n_permutations`` > 0 measures that
+    bias: the validation target is shuffled that many times, keeping the same bins, which gives
+    the IV that pure chance would produce. Extra columns then:
+
+    - ``iv_null_mean``: mean IV under shuffling, averaged over folds;
+    - ``n_folds_iv_valid_above_null_p95``: folds where the validation IV is above the 95th
+      percentile of its own shuffled IVs, i.e. clearly more than chance.
+
+    With two bins the rank correlation can only be +1 or -1, so it says little.
     """
+    rng = np.random.default_rng(seed)
     y = pd.Series(np.asarray(y), index=X.index)
     records = {name: [] for name in specs}
     for fit_rows, valid_rows in folds:
@@ -116,14 +131,20 @@ def fold_stability(
                 if seen.sum() >= 2
                 else np.nan
             )
-            records[name].append(
-                {
-                    "iv_fit": fit_iv.loc[name, "iv"],
-                    "iv_valid": float(valid_table["iv"].sum()),
-                    "rank_corr": float(rank_corr),
-                    "n_bins": int(fit_iv.loc[name, "n_bins"]),
-                }
-            )
+            record = {
+                "iv_fit": fit_iv.loc[name, "iv"],
+                "iv_valid": float(valid_table["iv"].sum()),
+                "rank_corr": float(rank_corr),
+                "n_bins": int(fit_iv.loc[name, "n_bins"]),
+            }
+            if n_permutations:
+                shuffled = [
+                    information_value(valid_bins[name], rng.permutation(y_valid.to_numpy()), 0.5)
+                    for _ in range(n_permutations)
+                ]
+                record["iv_null_mean"] = float(np.mean(shuffled))
+                record["above_null_p95"] = record["iv_valid"] > float(np.quantile(shuffled, 0.95))
+            records[name].append(record)
     rows = {}
     for name, per_fold in records.items():
         folds_df = pd.DataFrame(per_fold)
@@ -139,6 +160,9 @@ def fold_stability(
             "n_bins_min": int(folds_df["n_bins"].min()),
             "n_bins_max": int(folds_df["n_bins"].max()),
         }
+        if n_permutations:
+            rows[name]["iv_null_mean"] = folds_df["iv_null_mean"].mean()
+            rows[name]["n_folds_iv_valid_above_null_p95"] = int(folds_df["above_null_p95"].sum())
     table = pd.DataFrame.from_dict(rows, orient="index")
     table.index.name = "feature"
     return table

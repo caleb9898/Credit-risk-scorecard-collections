@@ -12,8 +12,9 @@ Convention (the usual one in credit scoring):
 so a riskier-than-average bin has a negative WoE. IV = sum over bins of
 (share of non-defaults - share of defaults) * WoE.
 
-Missing values get their own bin. A category or a missing value that was not seen when fitting
-gets WoE 0, the value of an average-risk bin.
+Missing values get their own bin, which has no minimum size. A category or a missing value that
+was not seen when fitting gets WoE 0, the value of an average-risk bin. A bin with only defaults
+or only non-defaults would have an infinite WoE; fitting stops with an error in that case.
 """
 
 from __future__ import annotations
@@ -115,6 +116,10 @@ class WoeBinner(BaseEstimator, TransformerMixin):
                     "labels": [", ".join(group) for group in groups],
                 }
             table = woe_table(self._labels(name, values), y)
+            if not np.isfinite(table["woe"]).all():
+                raise ValueError(
+                    f"{name}: a bin has only defaults or only non-defaults, so its WoE is infinite"
+                )
             # Bins in their natural order, missing last; empty bins are left out.
             order = [b for b in [*self.bins_[name]["labels"], MISSING_BIN] if b in table.index]
             self.tables_[name] = table.loc[order]

@@ -33,6 +33,7 @@ MIN_IV = 0.02
 MAX_CORRELATION = 0.7
 VIF_FLAG = 5.0
 IV_ALARM = 0.5
+N_PERMUTATIONS = 100  # shuffles per fold and feature, for the chance level of the validation IV
 
 
 def champion_specs() -> dict[str, dict]:
@@ -71,7 +72,9 @@ def woe_iv_report(train: pd.DataFrame) -> dict:
     iv["in_champion_candidates"] = ~iv.index.isin(list(EXCLUDED_FROM_CHAMPION))
 
     folds = list(make_cv().split(np.zeros(len(y)), y))
-    stability = fold_stability(X, y, folds, FEATURE_SPECS, min_iv=MIN_IV)
+    stability = fold_stability(
+        X, y, folds, FEATURE_SPECS, min_iv=MIN_IV, n_permutations=N_PERMUTATIONS, seed=0
+    )
 
     candidates = list(champion_specs())
     woe_values = binner.transform(X)
@@ -82,12 +85,14 @@ def woe_iv_report(train: pd.DataFrame) -> dict:
     by_month = status_iv_by_month(train)
     return {
         "n_train_rows": int(len(train)),
+        "n_train_inactive": int(X["INACTIVE"].sum()),
         "settings": {
             "min_bin_size": binner.min_bin_size,
             "min_iv": MIN_IV,
             "max_correlation": MAX_CORRELATION,
             "vif_flag": VIF_FLAG,
             "iv_alarm": IV_ALARM,
+            "n_permutations": N_PERMUTATIONS,
             "monotonic_trend": {k: v["monotonic_trend"] for k, v in FEATURE_SPECS.items()},
         },
         "iv_table": _records(iv.reset_index()),
