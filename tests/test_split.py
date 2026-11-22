@@ -165,6 +165,13 @@ def test_twins_across_split_separates_active_accounts():
     assert out["n_test_rows_with_twin_in_train_all_amounts_zero"] == 1  # only the AGE=45 pair
 
 
+def test_has_twin_in_known_answer():
+    reference = _frame([{"AGE": 30}, {"AGE": 40, "SEX": 2}])
+    rows = _frame([{"AGE": 40}, {"AGE": 50}, {"AGE": 30, "MARRIAGE": 2}])
+    # SEX and MARRIAGE are not candidate features, so they are ignored.
+    assert sp.has_twin_in(rows, reference).tolist() == [True, False, True]
+
+
 def test_twins_across_split_without_twins():
     df = _frame([{"AGE": 30}, {"AGE": 31}, {"AGE": 32}])
     labels = pd.Series(["train", "test", "train"])

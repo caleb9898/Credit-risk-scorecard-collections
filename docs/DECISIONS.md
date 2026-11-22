@@ -312,3 +312,84 @@ Limitaciones:
 - La única variable de tendencia (utilización de septiembre menos la de abril) resultó inútil (IV
   0.002); no se probaron tendencias del ratio de pago ni de la mora.
 - `LIMIT_BAL` no tiene fecha y un banco puede ajustarlo según el comportamiento (ADR-009).
+
+## ADR-012 — Especificación, selección y validación del modelo de PD — *Aceptada*
+Contexto: la Fase 5 ajusta la regresión logística sobre las variables WOE de ADR-011 y mide su
+discriminación y su calibración. Las cifras de entrenamiento están en
+`reports/metrics/pd_logistic_cv.json` y el análisis en `notebooks/03_pd_model_logistic.ipynb`.
+
+Decisiones tomadas antes de ajustar:
+- **Validación cruzada de todo el procedimiento.** El binning, la preselección, la selección de
+  variables y la logística forman una sola cadena (`creditrisk.models.pipeline.WoeLogitModel`), que
+  se vuelve a ajustar dentro de cada uno de los 15 folds de ADR-010 y se mide en las filas que ese
+  fold no vio. Un test comprueba que el binning de cada fold no ve sus filas de validación (los
+  pasos siguientes usan las mismas filas), y otro que las predicciones fuera de fold quedan en las
+  filas correctas. El modelo final se ajusta después con todo train.
+- **Selección dentro de la logística.** Con WOE = ln(no-defaults / defaults), todo coeficiente de un
+  modelo de PD debe ser negativo. Se quita primero, de a una, cualquier variable con signo positivo
+  (la de mayor p-valor entre ellas) y luego, de a una, la de mayor p-valor si supera 0.05.
+- **Sin regularización ni recalibración.** Máxima verosimilitud simple con statsmodels, que da
+  errores estándar e intervalos de confianza interpretables. La calibración se reporta tal como sale.
+- **Medición.** AUC, Gini, KS y PR-AUC sobre las predicciones fuera de fold, con intervalo bootstrap
+  estratificado de 1,000 remuestreos (primera repetición, semilla del proyecto), más el AUC de cada
+  repetición y el rango entre folds. Calibración: Brier, calibración global (calibration-in-the-large,
+  ideal 0), pendiente (ideal 1) con su intercepto, y tabla por decil. Puntos de operación: marcar el
+  10%, 20% o 30% de mayor PD, o todo lo que supere la tasa de default de train o 0.5.
+- **Modelo de sensibilidad (ADR-009).** El mismo procedimiento con `STATUS_SEP` agregado a las
+  candidatas dentro de cada fold, no a una lista fija.
+- **Mismos folds que la Fase 4.** Esos folds ya sirvieron para excluir `AGE` y `EDUCATION`
+  (ADR-011); se mantienen para tener un solo esquema y se declara como limitación.
+- **Uso del test.** Una sola evaluación, con los dos modelos congelados: el archivo de métricas de
+  entrenamiento guarda las variables y los coeficientes de cada modelo, y
+  `creditrisk.models.final_evaluation` se niega a evaluar un modelo que no coincida con ellos, o una
+  segunda versión de un modelo si el test ya se usó. Es el único módulo de la librería, además de
+  `creditrisk.data.split`, que carga el test, y solo puede llamarse desde este notebook (lo
+  comprueba un test). Se reporta sobre las 6,000 filas y sobre las que no tienen gemelo en train
+  (ADR-010), con la diferencia de AUC entre ambos modelos por bootstrap pareado en los dos casos.
+  Los puntos de operación en test son los umbrales de PD fijados en train (la tasa de default, 0.5
+  y los umbrales que marcaron el 10%, 20% y 30% en validación cruzada) más la captura al marcar el
+  10%, 20% o 30% de las cuentas de test con mayor PD, que es una regla de capacidad. El resultado
+  se guarda en `reports/metrics/pd_logistic_test.json`.
+
+Resultados en train:
+- **Campeón: 5 variables**, todas con signo negativo y p-valor menor que 0.01: `N_DELAY_MONTHS`,
+  `PAY_RATIO_1`, `PAY_RATIO_MEAN`, `LIMIT_BAL` y `PAY_RATIO_4`. La logística quitó, en este orden,
+  `UTIL_6`, `PAY_RATIO_5` y `UTIL_2` por signo incorrecto, y `PAY_RATIO_3` y `PAY_RATIO_2` por
+  p-valor. Las dos variables de utilización solo invierten su signo una vez que el modelo conoce el
+  límite y el comportamiento de pago (las demás de utilización ya habían salido por correlación con
+  ellas); `PAY_RATIO_5` se invierte porque se superpone con los otros ratios del modelo.
+- **Discriminación fuera de fold del campeón:** AUC 0.718 (IC 95% 0.710 a 0.725), KS 0.341
+  (0.329 a 0.357), PR-AUC 0.459 (0.447 a 0.471); el AUC por fold va de 0.707 a 0.738 y en el
+  propio train es 0.720, así que no hay señales de sobreajuste. El intervalo remuestrea filas con
+  los modelos de cada fold fijos; el rango entre folds y entre repeticiones refleja el reajuste.
+- **Calibración del campeón:** calibración global −0.001 y pendiente 0.986; la PD media predicha
+  coincide con la tasa observada. Por decil, la PD sigue la tasa observada en conjunto, pero **la
+  tasa observada no crece de forma ordenada en los deciles bajos**: el decil 2 tiene una tasa mayor
+  que el 3 y que el 4, y el 5 una apenas mayor que el 6. La mayor diferencia está en el decil 2
+  (PD 11.0% frente a 12.7% observada). El modelo separa bien a las cuentas de mayor riesgo y poco
+  entre las de riesgo bajo y medio. No se cambia el modelo por ello.
+- **Modelo de sensibilidad:** AUC fuera de fold 0.761 (IC 95% 0.753 a 0.768), y sí ordena todos sus
+  deciles. Si el estado de septiembre fuera legítimo, esa diferencia sería lo que cuesta excluirlo;
+  si no lo es, no es un costo. El intervalo pareado de la diferencia está en los resultados en test.
+- **Selección entre folds:** en el campeón, `LIMIT_BAL` y `PAY_RATIO_MEAN` entran en los 15 folds y
+  `N_DELAY_MONTHS` y `PAY_RATIO_1` en 14; `PAY_RATIO_2` a `PAY_RATIO_5` se reemplazan entre sí. La
+  lista exacta de variables no es única, aunque el desempeño sí es estable.
+
+Resultados en test (una sola evaluación, `reports/metrics/pd_logistic_test.json`):
+- **Campeón:** AUC 0.719 (IC 95% 0.703 a 0.736), KS 0.359 (0.333 a 0.390), PR-AUC 0.474 (0.449 a
+  0.502); sin las 43 filas con gemelo en train, AUC 0.721 (0.705 a 0.737). Es compatible con la
+  validación cruzada (0.718): no se detecta optimismo, aunque un solo test no permite descartar uno
+  menor que su incertidumbre (unos ±0.017). PD media 21.8% frente a 22.1% observada; calibración
+  global 0.024 y pendiente 1.037. También en test la tasa observada no crece de forma ordenada en
+  los deciles bajos y medios (el decil 3 por debajo del 2; el 6 por debajo del 4 y del 5).
+- **Modelo de sensibilidad:** AUC 0.764 (0.748 a 0.779). Diferencia con el campeón 0.044 (IC 95%
+  pareado 0.035 a 0.054; 0.043 sin gemelos, 0.033 a 0.053).
+- **Nada se cambia por estos resultados:** el campeón sigue siendo el modelo sin el estado de
+  septiembre (ADR-009).
+
+Limitaciones: una sola foto temporal (ADR-003); los folds ya se usaron en la Fase 4, con un efecto no
+cuantificado en validación cruzada (en test no se observó optimismo); 140 filas de train con gemelo
+pueden caer en folds distintos (ADR-010); los errores estándar de los coeficientes no consideran que
+las variables y los bins se eligieron con los mismos datos, y son algo optimistas; la calibración
+depende de la tasa de default de este archivo, que no se puede leer como la de la cartera del banco
+(`docs/DATA.md`); las fechas de registro de las variables son un SUPUESTO (ADR-009).

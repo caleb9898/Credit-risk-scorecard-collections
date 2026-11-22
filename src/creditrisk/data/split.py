@@ -130,6 +130,16 @@ def cv_folds_sha256(train_target: pd.Series) -> str:
     return digest.hexdigest()
 
 
+def has_twin_in(rows: pd.DataFrame, reference: pd.DataFrame) -> np.ndarray:
+    """True for every row of ``rows`` identical to some row of ``reference`` on the candidate
+    features (``CANDIDATE_FEATURE_COLS``)."""
+    profiles = reference[CANDIDATE_FEATURE_COLS].drop_duplicates()
+    merged = rows[CANDIDATE_FEATURE_COLS].merge(
+        profiles, on=CANDIDATE_FEATURE_COLS, how="left", indicator=True
+    )
+    return (merged["_merge"] == "both").to_numpy()
+
+
 def twins_across_split(df: pd.DataFrame, labels: pd.Series) -> dict[str, int]:
     """Count rows that have a twin on the other side of the split.
 
@@ -142,24 +152,19 @@ def twins_across_split(df: pd.DataFrame, labels: pd.Series) -> dict[str, int]:
     - ``n_train_rows_with_twin_in_train``: twins inside train, which can fall in different
       cross-validation folds.
     """
-    features = df[CANDIDATE_FEATURE_COLS]
     is_test = (labels == "test").to_numpy()
-    train_profiles = features[~is_test].drop_duplicates()
-    test_profiles = features[is_test].drop_duplicates()
-
-    def has_twin_in(rows: pd.DataFrame, profiles: pd.DataFrame) -> np.ndarray:
-        merged = rows.merge(profiles, on=CANDIDATE_FEATURE_COLS, how="left", indicator=True)
-        return (merged["_merge"] == "both").to_numpy()
-
-    test_with_twin = has_twin_in(features[is_test], train_profiles)
-    test_inactive = (df.loc[is_test, BILL_COLS + PAYAMT_COLS] == 0).all(axis=1).to_numpy()
+    train, test = df[~is_test], df[is_test]
+    test_with_twin = has_twin_in(test, train)
+    test_inactive = (test[BILL_COLS + PAYAMT_COLS] == 0).all(axis=1).to_numpy()
     return {
         "n_test_rows_with_twin_in_train": int(test_with_twin.sum()),
         "n_test_rows_with_twin_in_train_all_amounts_zero": int(
             (test_with_twin & test_inactive).sum()
         ),
-        "n_train_rows_with_twin_in_test": int(has_twin_in(features[~is_test], test_profiles).sum()),
-        "n_train_rows_with_twin_in_train": int(features[~is_test].duplicated(keep=False).sum()),
+        "n_train_rows_with_twin_in_test": int(has_twin_in(train, test).sum()),
+        "n_train_rows_with_twin_in_train": int(
+            train[CANDIDATE_FEATURE_COLS].duplicated(keep=False).sum()
+        ),
     }
 
 
