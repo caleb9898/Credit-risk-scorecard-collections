@@ -56,5 +56,9 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "SIM", "C4"]
 
+[tool.ruff.lint.pep8-naming]
+# scikit-learn convention: X is the feature matrix.
+extend-ignore-names = ["X", "X_*"]
+
 [tool.ruff.lint.per-file-ignores]
 "notebooks/*" = ["E402", "E501"]
