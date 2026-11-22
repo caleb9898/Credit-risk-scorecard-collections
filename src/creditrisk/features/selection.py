@@ -23,8 +23,8 @@ from creditrisk.features.woe import WoeBinner
 # Features kept out of the champion model, with the decision behind each one.
 EXCLUDED_FROM_CHAMPION = {
     "STATUS_SEP": "ADR-009: possible information from the outcome month; sensitivity model only",
-    "AGE": "ADR-011: IV close to 0.02 and unstable across folds",
-    "EDUCATION": "ADR-011: IV close to 0.02 and unstable across folds",
+    "AGE": "ADR-011: IV close to 0.02, about half of it chance; unstable across folds",
+    "EDUCATION": "ADR-011: real but weak signal (IV 0.022); not enough to justify it (ADR-002)",
 }
 # Added back, on top of the champion's shortlist, only in the sensitivity model of ADR-009.
 SENSITIVITY_FEATURES = ["STATUS_SEP"]
