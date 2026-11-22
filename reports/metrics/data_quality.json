@@ -733,7 +733,16 @@
   },
   "provenance": {
     "data_sha256": "30c6be3abd8dcfd3e6096c828bad8c2f011238620f5369220bd60cfc82700933",
-    "git_sha": "963e46d48162b65dd23ca39c0f2e4a0f8511c58e",
+    "git_sha": "1a192a15dd30cec3657ac37b5594bdd150bc7c17",
+    "library_versions": {
+      "numpy": "2.5.4",
+      "optbinning": "1.0.0",
+      "pandas": "3.1.1",
+      "python": "3.13.14",
+      "scikit-learn": "1.9.1",
+      "scipy": "1.18.1",
+      "statsmodels": "0.15.0"
+    },
     "seed": 20261004,
     "uncommitted_code_changes": false
   }
