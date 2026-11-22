@@ -1,4 +1,4 @@
-.PHONY: install lint format test check notebooks data-check clean
+.PHONY: install lint format test check notebooks data-check split clean
 
 install:
 	python -m pip install -e ".[dev]"
@@ -28,6 +28,10 @@ notebooks:
 # Validate the raw data file against the expected schema and print its SHA-256.
 data-check:
 	python -m creditrisk.data.schema data/raw/$(FILE)
+
+# Check the saved hold-out index against the project seed and save the split metrics.
+split:
+	python -m creditrisk.data.split
 
 clean:
 	rm -rf .pytest_cache .ruff_cache build *.egg-info

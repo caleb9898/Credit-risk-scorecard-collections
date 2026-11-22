@@ -59,3 +59,15 @@ def test_provenance_without_git(monkeypatch):
     prov = reporting.provenance("hash")
     assert prov["git_sha"] == "unknown"
     assert prov["uncommitted_code_changes"] is True
+
+
+def test_provenance_records_library_versions(tmp_path):
+    path = reporting.save_metrics("demo", {"a": 1}, "abc", metrics_dir=tmp_path)
+    versions = json.loads(path.read_text(encoding="utf-8"))["provenance"]["library_versions"]
+    assert set(versions) == {"python", *reporting.TRACKED_LIBRARIES}
+    assert versions["pandas"] == reporting.metadata.version("pandas")
+
+
+def test_library_versions_marks_missing_packages(monkeypatch):
+    monkeypatch.setattr(reporting, "TRACKED_LIBRARIES", ["surely-not-a-real-package"])
+    assert reporting.library_versions()["surely-not-a-real-package"] == "not installed"

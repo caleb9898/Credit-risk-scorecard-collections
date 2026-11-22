@@ -1,0 +1,56 @@
+{
+  "metrics": {
+    "cv": {
+      "folds_sha256": "a5b403dffcaf043cf5c075eeddfe57d0572befd94773d541ef32b1cf6642a1f5",
+      "n_folds": 5,
+      "n_folds_total": 15,
+      "n_repeats": 3,
+      "validation_defaults_max": 1062,
+      "validation_defaults_min": 1061,
+      "validation_rows_max": 4800,
+      "validation_rows_min": 4800
+    },
+    "default_rate_difference_train_minus_test": 4.166666666666208e-05,
+    "labels_sha256": "555c648c173a12628e97c38ee0b2225884593162f7baaa4bb32fe94345f98ad1",
+    "test": {
+      "default_rate": 0.22116666666666668,
+      "default_rate_ci95": [
+        0.21084533980336526,
+        0.23184480733832177
+      ],
+      "n_defaults": 1327,
+      "n_rows": 6000
+    },
+    "test_size": 0.2,
+    "train": {
+      "default_rate": 0.22120833333333334,
+      "default_rate_ci95": [
+        0.2160020372741407,
+        0.22650386233541892
+      ],
+      "n_defaults": 5309,
+      "n_rows": 24000
+    },
+    "twins": {
+      "n_test_rows_with_twin_in_train": 43,
+      "n_test_rows_with_twin_in_train_all_amounts_zero": 41,
+      "n_train_rows_with_twin_in_test": 42,
+      "n_train_rows_with_twin_in_train": 140
+    }
+  },
+  "provenance": {
+    "data_sha256": "30c6be3abd8dcfd3e6096c828bad8c2f011238620f5369220bd60cfc82700933",
+    "git_sha": "1a192a15dd30cec3657ac37b5594bdd150bc7c17",
+    "library_versions": {
+      "numpy": "2.5.4",
+      "optbinning": "1.0.0",
+      "pandas": "3.1.1",
+      "python": "3.13.14",
+      "scikit-learn": "1.9.1",
+      "scipy": "1.18.1",
+      "statsmodels": "0.15.0"
+    },
+    "seed": 20261004,
+    "uncommitted_code_changes": false
+  }
+}
