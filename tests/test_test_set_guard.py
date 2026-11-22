@@ -19,6 +19,7 @@ MAY_LOAD_ALL_ROWS = {
 # Files allowed to load the hold-out. Add the final-evaluation code here when it exists.
 MAY_LOAD_TEST = {
     "src/creditrisk/data/split.py",
+    "src/creditrisk/models/final_evaluation.py",
 }
 
 
