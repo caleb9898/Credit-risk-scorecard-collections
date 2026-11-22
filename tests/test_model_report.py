@@ -27,7 +27,9 @@ def test_model_specs_follow_adr_009_and_011():
 
 
 def test_train_report_structure(train):
-    report, models = rp.train_report(train.iloc[:6000], n_boot=20)
+    report, models, oof = rp.train_report(train.iloc[:6000], n_boot=20)
+    assert set(oof) == set(models)
+    assert oof["champion"].notna().all() and len(oof["champion"]) == 6000
     assert set(models) == {"champion", "sensitivity_with_status_sep"}
     champion = report["models"]["champion"]
     assert "STATUS_SEP" not in champion["final_features"]

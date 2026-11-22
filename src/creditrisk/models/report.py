@@ -55,10 +55,11 @@ def _cv_summary(cv: dict, y: pd.Series, thresholds, n_boot: int, seed: int) -> d
     }
 
 
-def train_report(train: pd.DataFrame, n_boot: int = 1000, seed: int = 0) -> tuple[dict, dict]:
+def train_report(train: pd.DataFrame, n_boot: int = 1000, seed: int = 0) -> tuple[dict, dict, dict]:
     """Cross-validate and fit both models on ``train``.
 
-    Returns the JSON-friendly report and the fitted final models (for the test evaluation).
+    Returns the JSON-friendly report, the fitted final models (for the test evaluation) and the
+    out-of-fold PD of the first repeat of every model (for plots).
     """
     X, y = build_features(train), train[TARGET]
     folds = list(make_cv().split(np.zeros(len(y)), y))
@@ -74,10 +75,12 @@ def train_report(train: pd.DataFrame, n_boot: int = 1000, seed: int = 0) -> tupl
         "models": {},
     }
     models = {}
+    oof_repeat_1 = {}
     for name, specs in model_specs().items():
         cv = cross_validate(specs, X, y, folds, n_folds=n_folds)
         model = WoeLogitModel(specs).fit(X, y)
         models[name] = model
+        oof_repeat_1[name] = cv["oof"][1]
         summary = model.selection_summary().reset_index().rename(columns={"index": "feature"})
         report["models"][name] = {
             "candidates": list(specs),
@@ -87,4 +90,4 @@ def train_report(train: pd.DataFrame, n_boot: int = 1000, seed: int = 0) -> tupl
             "train_fit_auc": auc(y, model.predict_pd(X)),
             "cv": _cv_summary(cv, y, thresholds, n_boot, seed),
         }
-    return report, models
+    return report, models, oof_repeat_1
