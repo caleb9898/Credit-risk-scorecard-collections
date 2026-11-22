@@ -376,18 +376,20 @@ Resultados en train:
   lista exacta de variables no es única, aunque el desempeño sí es estable.
 
 Resultados en test (una sola evaluación, `reports/metrics/pd_logistic_test.json`):
-- **Campeón:** AUC 0.719 (IC 95% 0.703 a 0.736), KS 0.359, PR-AUC 0.474; sin las 43 filas con
-  gemelo en train, AUC 0.721. Coincide con la validación cruzada (0.718), que por tanto no resultó
-  optimista. PD media 21.8% frente a 22.1% observada; calibración global 0.024 y pendiente 1.037.
-  También en test la tasa observada no crece de forma ordenada en los deciles bajos y medios.
+- **Campeón:** AUC 0.719 (IC 95% 0.703 a 0.736), KS 0.359 (0.333 a 0.390), PR-AUC 0.474 (0.449 a
+  0.502); sin las 43 filas con gemelo en train, AUC 0.721 (0.705 a 0.737). Es compatible con la
+  validación cruzada (0.718): no se detecta optimismo, aunque un solo test no permite descartar uno
+  menor que su incertidumbre (unos ±0.017). PD media 21.8% frente a 22.1% observada; calibración
+  global 0.024 y pendiente 1.037. También en test la tasa observada no crece de forma ordenada en
+  los deciles bajos y medios (el decil 3 por debajo del 2; el 6 por debajo del 4 y del 5).
 - **Modelo de sensibilidad:** AUC 0.764 (0.748 a 0.779). Diferencia con el campeón 0.044 (IC 95%
-  pareado 0.035 a 0.054; 0.043 sin gemelos).
+  pareado 0.035 a 0.054; 0.043 sin gemelos, 0.033 a 0.053).
 - **Nada se cambia por estos resultados:** el campeón sigue siendo el modelo sin el estado de
   septiembre (ADR-009).
 
 Limitaciones: una sola foto temporal (ADR-003); los folds ya se usaron en la Fase 4, con un efecto no
-cuantificado en validación cruzada (en test no se observó optimismo); 140 filas de train con gemelo pueden caer en folds distintos (ADR-010); los errores
-estándar de los coeficientes no consideran que las variables y los bins se eligieron con los mismos
-datos, y son algo optimistas; la calibración depende de la tasa de default de este archivo, que no
-se puede leer como la de la cartera del banco (`docs/DATA.md`); las fechas de registro de las
-variables son un SUPUESTO (ADR-009).
+cuantificado en validación cruzada (en test no se observó optimismo); 140 filas de train con gemelo
+pueden caer en folds distintos (ADR-010); los errores estándar de los coeficientes no consideran que
+las variables y los bins se eligieron con los mismos datos, y son algo optimistas; la calibración
+depende de la tasa de default de este archivo, que no se puede leer como la de la cartera del banco
+(`docs/DATA.md`); las fechas de registro de las variables son un SUPUESTO (ADR-009).

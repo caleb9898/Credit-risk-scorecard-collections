@@ -835,7 +835,7 @@
   },
   "provenance": {
     "data_sha256": "30c6be3abd8dcfd3e6096c828bad8c2f011238620f5369220bd60cfc82700933",
-    "git_sha": "6e344949505bd44d9aee3c36d659b9597131e48f",
+    "git_sha": "e690cc2f1bcd848f45417ba66441726f563ec21f",
     "library_versions": {
       "numpy": "2.5.4",
       "optbinning": "1.0.0",
